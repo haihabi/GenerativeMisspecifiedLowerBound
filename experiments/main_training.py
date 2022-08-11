@@ -13,7 +13,7 @@ def config() -> pru.ConfigReader:
     ###############################################
     # Training
     ###############################################
-    _cr.add_parameter("n_epochs", type=int, default=10)
+    _cr.add_parameter("n_epochs", type=int, default=180)
     _cr.add_parameter("lr", type=float, default=1.6e-3)
     _cr.add_parameter("grad_norm_clipping", type=float, default=0.1)
     _cr.add_parameter("weight_decay", type=float, default=1e-4)
@@ -27,8 +27,8 @@ def config() -> pru.ConfigReader:
     # Signal Model Parameter
     ###############################################
     _cr.add_parameter("d_x", type=int, default=16)
-    _cr.add_parameter("d_p", type=int, default=1)
-    _cr.add_parameter("norm_min", type=float, default=0.01)
+    _cr.add_parameter("d_p", type=int, default=2)
+    _cr.add_parameter("norm_min", type=float, default=1.0)
     _cr.add_parameter("norm_max", type=float, default=10.0)
     # _cr.add_parameter("threshold", type=float, default=1.0)
     # _cr.add_parameter("snr_min", type=float, default=2.0)
@@ -81,6 +81,7 @@ def validation_run(in_ma, in_validation_loader, in_cnf):
 
 
 def run_main(in_run_parameters):
+    pru.set_seed(0)
     data_model = measurements_distributions.LinearModel(in_run_parameters.d_x, in_run_parameters.d_p,
                                                         in_run_parameters.norm_min,
                                                         in_run_parameters.norm_max)
@@ -100,6 +101,7 @@ def run_main(in_run_parameters):
         results_log = ma.result
         pru.logger.info(f"Finished epoch:{e} training with results:{ma.results_str()}")
         ma.clear()
+        wandb.log(results_log)
         if ma.is_best("validation_nll"):
             pru.logger.info(":) :) :) New Best !!!!")
             torch.save(cnf.state_dict(), os.path.join(wandb.run.dir, "flow_best.pt"))

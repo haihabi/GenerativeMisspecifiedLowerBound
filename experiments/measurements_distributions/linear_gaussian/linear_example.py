@@ -4,6 +4,7 @@ from experiments import constants
 from experiments.measurements_distributions.base_model import BaseModel
 from experiments.measurements_distributions.linear_gaussian.linear_optimal_flow import LinearOptimalFlow
 from experiments.measurements_distributions import parameters_generator
+import pyresearchutils as pru
 
 VAR = 1.0
 
@@ -18,15 +19,19 @@ class LinearModel(BaseModel):
     def _get_optimal_model(self):
         return self.optimal_flow
 
+    @property
+    def file_name(self):
+        return f"{self.name}_model.pt"
+
     def save_data_model(self, folder):
-        torch.save(self.optimal_flow.state_dict(), os.path.join(folder, f"{self.name}_model.pt"))
+        torch.save(self.optimal_flow.state_dict(), os.path.join(folder, self.file_name))
 
     def load_data_model(self, folder):
-        data = torch.load(os.path.join(folder, f"{self.name}_model.pt"), map_location="cpu")
+        data = torch.load(os.path.join(folder, self.file_name), map_location="cpu")
         self.optimal_flow.load_state_dict(data)
 
     def generate_data(self, n_samples, **kwargs):
-        z = torch.randn([n_samples, self.d_x], device=constants.DEVICE)
+        z = torch.randn([n_samples, self.d_x], device=pru.get_working_device())
         return self.optimal_flow.backward(z, **kwargs)[0]
 
     @staticmethod
