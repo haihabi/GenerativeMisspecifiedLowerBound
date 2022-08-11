@@ -53,7 +53,7 @@ def load_run_data(in_run_name):
 
 if __name__ == '__main__':
     pru.set_seed(0)
-    run_name = "resilient-sunset-36"
+    run_name = "rosy-dust-39"
     model, config, cnf = load_run_data(run_name)
     d_x = config["d_x"]
     d_p = config["d_p"]
@@ -103,35 +103,35 @@ if __name__ == '__main__':
     plt.grid()
     plt.show()
 
-    plt.plot(alpha_array, np.asarray(mc["mcrb"]), "--", label="MCRB")
-    plt.plot(alpha_array, np.asarray(mc["lb"]), "--", label="LB")
-    plt.grid()
-    plt.legend()
-    plt.show()
-
-    mc.clear()
-    beta_array = np.linspace(-1.5, 1.5, 100)
-    for beta in beta_array:
-        linear_ms = build_misspecifietion_type_one(h, c_xx, h_delta, c_vv_delta, 0.0, beta)
-        mcrb = linear_ms.calculate_mcrb(h, c_xx)
-        p_zero = linear_ms.calculate_pseudo_true_parameter(p_true[constants.THETA].flatten(), h)
-        lb = gmlb.compute_lower_bound(mcrb, p_true[constants.THETA].flatten(), p_zero)
-        gmcrb, gmlb_v = gmlb.generative_misspecified_cramer_rao_bound(opt_flow, 50000, linear_ms, **p_true)
-        mc.insert(lb=torch.trace(lb).item() / d_p,
-                  mcrb=torch.trace(mcrb).item() / d_p,
-                  gmcrb=torch.trace(gmcrb).item() / d_p,
-                  gmlb=torch.trace(gmlb_v).item() / d_p)
-
-    plt.subplot(1, 2, 1)
-    plt.plot(beta_array, np.asarray(mc["mcrb"]), "--", label="MCRB")
-    plt.plot(beta_array, np.asarray(mc["gmcrb"]), "-o", label="GMCRB (Optimal)")
-    plt.plot(beta_array, np.ones(len(beta_array)) * true_crb, label="CRB (True)")
-    plt.legend()
-    plt.grid()
-    plt.subplot(1, 2, 2)
-    plt.plot(beta_array, np.asarray(mc["lb"]), "--", label="LB")
-    plt.plot(beta_array, np.asarray(mc["gmlb"]), "-o", label="GMLB (Optimal)")
-    plt.legend()
-
-    plt.grid()
-    plt.show()
+    # plt.plot(alpha_array, np.asarray(mc["mcrb"]), "--", label="MCRB")
+    # plt.plot(alpha_array, np.asarray(mc["lb"]), "--", label="LB")
+    # plt.grid()
+    # plt.legend()
+    # plt.show()
+    #
+    # mc.clear()
+    # beta_array = np.linspace(-1.5, 1.5, 100)
+    # for beta in beta_array:
+    #     linear_ms = build_misspecifietion_type_one(h, c_xx, h_delta, c_vv_delta, 0.0, beta)
+    #     mcrb = linear_ms.calculate_mcrb(h, c_xx)
+    #     p_zero = linear_ms.calculate_pseudo_true_parameter(p_true[constants.THETA].flatten(), h)
+    #     lb = gmlb.compute_lower_bound(mcrb, p_true[constants.THETA].flatten(), p_zero)
+    #     gmcrb, gmlb_v = gmlb.generative_misspecified_cramer_rao_bound(opt_flow, 50000, linear_ms, **p_true)
+    #     mc.insert(lb=torch.trace(lb).item() / d_p,
+    #               mcrb=torch.trace(mcrb).item() / d_p,
+    #               gmcrb=torch.trace(gmcrb).item() / d_p,
+    #               gmlb=torch.trace(gmlb_v).item() / d_p)
+    #
+    # plt.subplot(1, 2, 1)
+    # plt.plot(beta_array, np.asarray(mc["mcrb"]), "--", label="MCRB")
+    # plt.plot(beta_array, np.asarray(mc["gmcrb"]), "-o", label="GMCRB (Optimal)")
+    # plt.plot(beta_array, np.ones(len(beta_array)) * true_crb, label="CRB (True)")
+    # plt.legend()
+    # plt.grid()
+    # plt.subplot(1, 2, 2)
+    # plt.plot(beta_array, np.asarray(mc["lb"]), "--", label="LB")
+    # plt.plot(beta_array, np.asarray(mc["gmlb"]), "-o", label="GMLB (Optimal)")
+    # plt.legend()
+    #
+    # plt.grid()
+    # plt.show()

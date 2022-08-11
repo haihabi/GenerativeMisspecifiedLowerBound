@@ -16,7 +16,7 @@ def config() -> pru.ConfigReader:
     _cr.add_parameter("n_epochs", type=int, default=180)
     _cr.add_parameter("lr", type=float, default=1.6e-3)
     _cr.add_parameter("grad_norm_clipping", type=float, default=0.1)
-    _cr.add_parameter("weight_decay", type=float, default=1e-4)
+    _cr.add_parameter("weight_decay", type=float, default=0.0)
 
     _cr.add_parameter("random_padding", type=str, default="false")
     _cr.add_parameter("padding_size", type=int, default=0)
@@ -94,10 +94,15 @@ def run_main(in_run_parameters):
     cnf = flow_models.generate_cnf_model(in_run_parameters.d_x, in_run_parameters.d_p, [constants.THETA])
     m_step = len(train_loader)
     opt = torch.optim.Adam(cnf.parameters(), lr=in_run_parameters.lr, weight_decay=in_run_parameters.weight_decay)
+    warm_up = 5
+    scheduler1 = torch.optim.lr_scheduler.ConstantLR(opt, factor=0.1, total_iters=warm_up)
+    scheduler2 = torch.optim.lr_scheduler.CosineAnnealingLR(opt, in_run_parameters.n_epochs - warm_up)
+    scheduler = torch.optim.lr_scheduler.ChainedScheduler([scheduler1, scheduler2])
     ma = pru.MetricAveraging()
     for e in range(in_run_parameters.n_epochs):
         flow_training_loop(m_step, train_loader, cnf, opt, ma)
         validation_run(ma, val_loader, cnf)
+        scheduler.step()
         results_log = ma.result
         pru.logger.info(f"Finished epoch:{e} training with results:{ma.results_str()}")
         ma.clear()
