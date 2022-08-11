@@ -26,12 +26,12 @@ class LinearModel(BaseModel):
         self.optimal_flow.load_state_dict(data)
 
     def generate_data(self, n_samples, **kwargs):
-        cond = torch.ones([n_samples, 1], device=constants.DEVICE) * kwargs[constants.THETA]
         z = torch.randn([n_samples, self.d_x], device=constants.DEVICE)
-        return self.optimal_flow.backward(z, cond=cond)[0]
+        return self.optimal_flow.backward(z, **kwargs)[0]
 
     @staticmethod
     def ml_estimator(r):
+        raise NotImplemented
         return torch.pow(torch.mean(torch.pow(torch.abs(r), 6), dim=1), 1 / 6)
 
     def crb(self, *args, **kwargs):

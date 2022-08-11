@@ -2,16 +2,17 @@ import torch
 import normflowpy as nfp
 from experiments import constants
 from torch import nn
+import pyresearchutils as pru
 
 
 def generate_c_xx_matrix(dim):
-    b = torch.randn([dim, dim], device=constants.DEVICE)
+    b = torch.randn([dim, dim], device=pru.get_working_device())
     b = b / torch.norm(b)
     return torch.matmul(b.transpose(dim0=0, dim1=1), b)
 
 
 def generate_h_matrix(d_x, d_p):
-    a = torch.randn([d_x, d_p], device=constants.DEVICE)
+    a = torch.randn([d_x, d_p], device=pru.get_working_device())
     return a / torch.sqrt(torch.pow(torch.abs(a), 2.0).sum())
 
 
@@ -37,6 +38,7 @@ class LinearOptimalFlow(nfp.ConditionalBaseFlowLayer):
 
     def backward(self, z, **kwargs):
         cond = kwargs[constants.THETA]
-        x = torch.matmul(self.l_matrix, z.transpose(dim0=0, dim1=1)) + torch.matmul(self.h, cond.transpose(dim0=0, dim1=1))
+        x = torch.matmul(self.l_matrix, z.transpose(dim0=0, dim1=1)) + torch.matmul(self.h,
+                                                                                    cond.transpose(dim0=0, dim1=1))
         x = x.transpose(dim0=0, dim1=1)
         return x, self.l_log_det
