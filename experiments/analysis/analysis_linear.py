@@ -53,7 +53,7 @@ def load_run_data(in_run_name):
 
 if __name__ == '__main__':
     pru.set_seed(0)
-    run_name = "rosy-dust-39"
+    run_name = "comfy-shape-40"
     model, config, cnf = load_run_data(run_name)
     d_x = config["d_x"]
     d_p = config["d_p"]
