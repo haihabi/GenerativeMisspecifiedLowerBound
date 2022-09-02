@@ -11,13 +11,15 @@ class LinearMCRB(gmlb.BaseMisSpecifiedModel):
         self._fim = torch.matmul(torch.matmul(self.h.T, self.c_vv_inv), self.h)
         self._crb = torch.linalg.inv(self._fim)
 
+    # TODO: remove H
     def calculate_mcrb(self, h, c_vv):
         a_inv = self.crb()
         b = torch.matmul(torch.matmul(torch.matmul(self.h.T, self.c_vv_inv), c_vv), torch.matmul(self.c_vv_inv, self.h))
         return torch.matmul(torch.matmul(a_inv, b), a_inv)
 
-    def calculate_pseudo_true_parameter(self, p_true, h_true):
-        u = torch.matmul(self.h.T, torch.matmul(self.c_vv_inv, torch.matmul(h_true, p_true)))
+    # TODO: change to mu
+    def calculate_pseudo_true_parameter(self,in_mu):
+        u = torch.matmul(self.h.T, torch.matmul(self.c_vv_inv, in_mu))
         return torch.matmul(self.crb(), u)
 
     def crb(self):

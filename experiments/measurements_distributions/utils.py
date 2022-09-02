@@ -27,7 +27,7 @@ def dataset_vs_testset_checking(data_model, in_dataset, parameter_name, range_it
     pru.logger.info("Finished dataset check")
 
 
-def save_or_load_model(dm, base_dataset_folder, disable_load, additional_save=None):
+def save_or_load_model(dm, base_dataset_folder, disable_load=False, additional_save=None):
     model_dataset_file_path = os.path.join(base_dataset_folder, "models")
     os.makedirs(model_dataset_file_path, exist_ok=True)
     if dm.model_exist(model_dataset_file_path) and not disable_load:
