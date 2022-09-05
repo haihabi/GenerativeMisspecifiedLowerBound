@@ -46,7 +46,8 @@ class TruncatedLinearModel(BaseModel):
 
     def generate_data(self, n_samples, **kwargs):
         mu = torch.matmul(kwargs[constants.THETA], self.h.T)
-        return sample_truncated_normal([n_samples, self.d_x], self.a, self.b, mu, torch.sqrt(self.c_xx_bar.diag()))
+        x_s = sample_truncated_normal([n_samples, self.d_x], self.a, self.b, mu, torch.sqrt(self.c_xx_bar.diag()))
+        return x_s
 
     @staticmethod
     def ml_estimator(r):
@@ -54,23 +55,3 @@ class TruncatedLinearModel(BaseModel):
 
     def mcrb(self, *args, **kwargs):
         raise NotImplemented
-
-# if __name__ == '__main__':
-#     import gcrb
-#     import numpy as np
-#
-#     dm = LinearModel(10, 2, -10, 10, 0.1)
-#     theta_array = dm.parameter_range(5)
-#     model_opt = dm.get_optimal_model()
-#     crb_list = [dm.crb(theta) for theta in theta_array]
-#     gcrb_list = [torch.inverse(gcrb.adaptive_sampling_gfim(model_opt, theta.reshape([-1]))) for theta in theta_array]
-#
-#     theta_array = theta_array.cpu().detach().numpy()
-#     crb_array = torch.stack(crb_list).cpu().detach().numpy()
-#     gcrb_array = torch.stack(gcrb_list).cpu().detach().numpy()
-#     from matplotlib import pyplot as plt
-#
-#     plt.plot(theta_array[:, 0], np.diagonal(crb_array, axis1=1, axis2=2).sum(axis=-1))
-#     plt.plot(theta_array[:, 0], np.diagonal(gcrb_array, axis1=1, axis2=2).sum(axis=-1))
-#     plt.show()
-# print("a")
