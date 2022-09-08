@@ -38,6 +38,8 @@ def config() -> pru.ConfigReader:
     _cr.add_parameter("d_p", type=int, default=2)
     _cr.add_parameter("norm_min", type=float, default=0.1)
     _cr.add_parameter("norm_max", type=float, default=10.0)
+    _cr.add_parameter("min_limit", type=float, default=-5.0)
+    _cr.add_parameter("max_limit", type=float, default=5.0)
     ###############################################
     # Dataset Parameters
     ###############################################
@@ -85,7 +87,9 @@ def run_main(in_run_parameters):
         d_x=in_run_parameters.d_x,
         d_p=in_run_parameters.d_p,
         norm_min=in_run_parameters.norm_min,
-        norm_max=in_run_parameters.norm_max)
+        norm_max=in_run_parameters.norm_max,
+        a_limit=in_run_parameters.min_limit,
+        b_limit=in_run_parameters.max_limit)
     measurements_distributions.save_or_load_model(data_model, in_run_parameters.base_dataset_folder)
     train_loader, val_loader = measurements_distributions.generate_and_save_or_load_dataset(data_model,
                                                                                             in_run_parameters.base_dataset_folder,

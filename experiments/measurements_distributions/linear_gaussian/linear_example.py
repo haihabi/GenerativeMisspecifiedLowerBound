@@ -10,7 +10,7 @@ VAR = 1.0
 
 
 class LinearModel(BaseModel):
-    def __init__(self, d_x: int, d_p: int, norm_min: float, norm_max: float):
+    def __init__(self, d_x: int, d_p: int, norm_min: float, norm_max: float,**kwargs):
         parameters = parameters_generator.ParameterContainer(
             parameters_generator.NormGaussian(constants.THETA, d_p, 0, VAR, norm_min, norm_max))
         super().__init__(d_x, parameters, has_optimal_flow=True, has_crb=True, has_mcrb=True)
