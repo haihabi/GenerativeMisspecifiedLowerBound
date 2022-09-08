@@ -13,11 +13,11 @@ def config() -> pru.ConfigReader:
     ###############################################
     # Training
     ###############################################
-    _cr.add_parameter("base_epochs", type=int, default=180)
+    _cr.add_parameter("base_epochs", type=int, default=360)
     _cr.add_parameter('base_dataset_size', type=int, default=200000)
     _cr.add_parameter("n_validation_points", type=int, default=180)
-    _cr.add_parameter("lr", type=float, default=1.6e-3)
-    _cr.add_parameter("grad_norm_clipping", type=float, default=0.1)
+    _cr.add_parameter("lr", type=float, default=2e-4)
+    _cr.add_parameter("grad_norm_clipping", type=float, default=0.0)
     _cr.add_parameter("weight_decay", type=float, default=0.0)
 
     _cr.add_parameter("random_padding", type=str, default="false")
@@ -35,7 +35,7 @@ def config() -> pru.ConfigReader:
     ###############################################
     _cr.add_parameter('base_dataset_folder', type=str, default="./temp/datasets")
     _cr.add_parameter('batch_size', type=int, default=512)
-    _cr.add_parameter('dataset_size', type=int, default=200)  # 200000
+    _cr.add_parameter('dataset_size', type=int, default=200000)  # 200000
     _cr.add_parameter('val_dataset_size', type=int, default=20000)
     _cr.add_parameter('force_data_generation', type=str, default="false")
 
