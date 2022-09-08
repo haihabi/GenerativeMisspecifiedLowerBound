@@ -13,19 +13,19 @@ def config() -> pru.ConfigReader:
     ###############################################
     # Training
     ###############################################
-    _cr.add_parameter("n_epochs", type=int, default=1800)
+    _cr.add_parameter("base_epochs", type=int, default=180)
+    _cr.add_parameter('base_dataset_size', type=int, default=200000)
+    _cr.add_parameter("n_validation_points", type=int, default=180)
     _cr.add_parameter("lr", type=float, default=1.6e-3)
     _cr.add_parameter("grad_norm_clipping", type=float, default=0.1)
     _cr.add_parameter("weight_decay", type=float, default=0.0)
 
     _cr.add_parameter("random_padding", type=str, default="false")
     _cr.add_parameter("padding_size", type=int, default=0)
-    # _cr.add_parameter("quantization_preprocessing", type=str, default="true")
-    # _cr.add_parameter("variational_dequantization", type=str, default="false")
-
     ###############################################
     # Signal Model Parameter
     ###############################################
+    _cr.add_parameter("model_name", type=str, default="LinearGaussian", enum=measurements_distributions.ModelName)
     _cr.add_parameter("d_x", type=int, default=8)
     _cr.add_parameter("d_p", type=int, default=2)
     _cr.add_parameter("norm_min", type=float, default=0.1)
@@ -35,7 +35,7 @@ def config() -> pru.ConfigReader:
     ###############################################
     _cr.add_parameter('base_dataset_folder', type=str, default="./temp/datasets")
     _cr.add_parameter('batch_size', type=int, default=512)
-    _cr.add_parameter('dataset_size', type=int, default=20000)
+    _cr.add_parameter('dataset_size', type=int, default=200)  # 200000
     _cr.add_parameter('val_dataset_size', type=int, default=20000)
     _cr.add_parameter('force_data_generation', type=str, default="false")
 
@@ -72,9 +72,12 @@ def validation_run(in_ma, in_validation_loader, in_cnf):
 
 def run_main(in_run_parameters):
     pru.set_seed(0)
-    data_model = measurements_distributions.LinearModel(in_run_parameters.d_x, in_run_parameters.d_p,
-                                                        in_run_parameters.norm_min,
-                                                        in_run_parameters.norm_max)
+    data_model = measurements_distributions.get_measurement_distribution(
+        in_run_parameters.model_name,
+        d_x=in_run_parameters.d_x,
+        d_p=in_run_parameters.d_p,
+        norm_min=in_run_parameters.norm_min,
+        norm_max=in_run_parameters.norm_max)
     measurements_distributions.save_or_load_model(data_model, in_run_parameters.base_dataset_folder)
     train_loader, val_loader = measurements_distributions.generate_and_save_or_load_dataset(data_model,
                                                                                             in_run_parameters.base_dataset_folder,
@@ -82,19 +85,22 @@ def run_main(in_run_parameters):
                                                                                             in_run_parameters.dataset_size,
                                                                                             in_run_parameters.val_dataset_size,
                                                                                             force_data_generation=in_run_parameters.force_data_generation)
+    n_epochs = in_run_parameters.base_epochs * int(in_run_parameters.base_dataset_size / in_run_parameters.dataset_size)
+    pru.logger.info(f"Number of epochs:{n_epochs}")
     cnf = flow_models.generate_cnf_model(in_run_parameters.d_x, in_run_parameters.d_p, [constants.THETA])
     m_step = len(train_loader)
     opt = torch.optim.Adam(cnf.parameters(), lr=in_run_parameters.lr, weight_decay=in_run_parameters.weight_decay)
     ma = pru.MetricAveraging()
-    for e in range(in_run_parameters.n_epochs):
+    validation_mod = int(n_epochs / in_run_parameters.n_validation_points)
+    for e in range(n_epochs):
         flow_training_loop(m_step, train_loader, cnf, opt, ma)
-        validation_run(ma, val_loader, cnf)
-        # scheduler.step()
+        if e % validation_mod == 0:
+            validation_run(ma, val_loader, cnf)
         results_log = ma.result
-        pru.logger.info(f"Finished epoch:{e} training with results:{ma.results_str()}")
+        pru.logger.info(f"Finished epoch:{e} of {n_epochs} training with results:{ma.results_str()}")
         ma.clear()
         wandb.log(results_log)
-        if ma.is_best("validation_nll"):
+        if e % validation_mod == 0 and ma.is_best("validation_nll"):
             pru.logger.info(":) :) :) New Best !!!!")
             torch.save(cnf.state_dict(), os.path.join(wandb.run.dir, "flow_best.pt"))
 

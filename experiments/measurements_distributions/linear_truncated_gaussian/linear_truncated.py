@@ -52,6 +52,3 @@ class TruncatedLinearModel(BaseModel):
     @staticmethod
     def ml_estimator(r):
         raise NotImplemented
-
-    def mcrb(self, *args, **kwargs):
-        raise NotImplemented
