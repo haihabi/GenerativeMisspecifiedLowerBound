@@ -42,7 +42,10 @@ class TruncatedLinearModel(BaseModel):
 
     def load_data_model(self, folder):
         data = torch.load(os.path.join(folder, self.file_name), map_location="cpu")
-        raise NotImplemented
+        self.h = data["h"]
+        self.c_xx_bar = data["c_xx_bar"]
+        self.a = data["a"]
+        self.b = data["b"]
 
     def generate_data(self, n_samples, **kwargs):
         mu = torch.matmul(kwargs[constants.THETA], self.h.T)

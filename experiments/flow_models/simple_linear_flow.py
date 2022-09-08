@@ -20,7 +20,6 @@ def build_simple_linear_flow(in_prior, in_d_x, in_d_p, in_cond_name_list, n_bloc
                                      cond_name_list=in_cond_name_list,
                                      condition_vector_size=in_d_p, n_hidden=n_hidden_inject,
                                      net_class=nfp.base_nets.generate_mlp_class(n_layer=n_layer_inject,
-                                                                                non_linear_function=None,
                                                                                 bias=inject_bias),
                                      scale=inject_scale))
         # if coupling_layer and b != (n_blocks - 1):
