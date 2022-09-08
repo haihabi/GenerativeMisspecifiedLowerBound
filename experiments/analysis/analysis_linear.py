@@ -2,47 +2,16 @@ import numpy as np
 import torch
 
 from experiments import constants
-from experiments import measurements_distributions
 import gmlb
 from matplotlib import pyplot as plt
 import pyresearchutils as pru
-import wandb
-import os
-from experiments import flow_models
-from experiments.analysis.helpers import build_misspecifietion_type_one
-
-FLOW_BEST = "flow_best.pt"
+from experiments.analysis.helpers import build_misspecifietion_type_one, load_run_data
 
 
 def get_h_and_c_xx(in_opt_flow):
     _h = in_opt_flow.flow.flows[0].h
     _c_xx = in_opt_flow.flow.flows[0].c_xx
     return _h, _c_xx
-
-
-def download_file(in_run, in_file):
-    if os.path.isfile(in_file):
-        os.remove(in_file)
-    in_run.file(in_file).download()
-
-
-def load_run_data(in_run_name):
-    api = wandb.Api()
-    runs = api.runs(f"HVH/{constants.PROJECT}")
-    for run in runs:
-        print(run.name, run.state)
-        if run.name == in_run_name:
-            download_file(run, FLOW_BEST)
-            _model = measurements_distributions.get_measurement_distribution(
-                measurements_distributions.ModelName.LinearGaussian, d_x=run.config["d_x"], d_p=run.config["d_p"],
-                norm_min=run.config["norm_min"],
-                norm_max=run.config["norm_max"])
-            _cnf = flow_models.generate_cnf_model(run.config["d_x"], run.config["d_p"], [constants.THETA])
-            data = torch.load(FLOW_BEST, map_location="cpu")
-            _cnf.load_state_dict(data)
-            download_file(run, _model.file_name)
-            _model.load_data_model("./")
-            return _model, run.config, _cnf
 
 
 def parameter_sweep(in_flow, in_p_true, in_n_test_points, in_linear_ms, in_samples_per_point):
