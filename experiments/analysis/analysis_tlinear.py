@@ -48,7 +48,7 @@ def compute_mean_covarinace(in_model, in_mu_overline, eps=1e-8):
 
 if __name__ == '__main__':
     pru.set_seed(0)
-    run_name = "lunar-silence-75"
+    run_name = "copper-star-78"
 
     model, run_parameters, cnf = load_run_data(run_name)
     # d_x = 16
@@ -66,7 +66,7 @@ if __name__ == '__main__':
     mc = pru.MetricCollector()
 
     for alpha in alpha_array:
-        linear_ms = build_misspecifietion_type_one(h, l_x, h_delta, l_delta, alpha, 0.2)
+        linear_ms = build_misspecifietion_type_one(h, l_x, h_delta, l_delta, alpha, 0.0)
 
         mu_overline = torch.matmul(p_true[constants.THETA], h.T)
         mu, c_xx = compute_mean_covarinace(model, mu_overline)

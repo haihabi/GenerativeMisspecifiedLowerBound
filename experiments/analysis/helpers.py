@@ -38,7 +38,9 @@ def load_run_data(in_run_name):
                 d_x=run_parameters.d_x,
                 d_p=run_parameters.d_p,
                 norm_min=run_parameters.norm_min,
-                norm_max=run_parameters.norm_max)
+                norm_max=run_parameters.norm_max,
+                a_limit=float(run_parameters.min_limit),
+                b_limit=float(run_parameters.max_limit))
             _cnf = flow_models.generate_cnf_model(run_parameters.d_x,
                                                   run_parameters.d_p,
                                                   [constants.THETA],

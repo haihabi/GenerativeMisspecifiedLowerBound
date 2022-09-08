@@ -20,8 +20,13 @@ class TruncatedLinearModel(BaseModel):
         self.c_xx_bar = torch.diag(generate_c_xx_matrix(d_x).diag())
         self.a_limit = a_limit
         self.b_limit = b_limit
-        self.a = -a_limit * torch.rand([d_x])
-        self.b = b_limit * torch.rand([d_x])
+        if self.a_limit > self.b_limit:
+            pru.logger.critical(
+                f"A limit must be smaller than b limit the given values are a={self.a_limit} and b={self.b_limit}")
+        self.delta = b_limit - a_limit
+
+        self.a = a_limit + 0.9 * (self.delta / 2) * torch.rand([d_x])
+        self.b = b_limit - 0.9 * (self.delta / 2) * torch.rand([d_x])
 
     @property
     def name(self) -> str:
