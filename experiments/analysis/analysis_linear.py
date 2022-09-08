@@ -56,14 +56,12 @@ def parameter_sweep(in_flow, in_p_true, in_n_test_points, in_linear_ms, in_sampl
                                                                             in_linear_ms, **p_true)
         res_list.append(est_mcrb)
     return torch.stack(res_list)
-    # print("a")
-    # _mc.insert(lb=torch.trace(lb).item() / d_p,
-    #            crb=torch.trace(linear_ms.crb()) / d_p,
-    #            gmcrb=torch.trace(gmcrb).item() / d_p,
-    #            gmcrb_cnf=torch.trace(gmcrb_cnf).item() / d_p,
-    #            gmlb_cnf=torch.trace(gmlb_cnf).item() / d_p,
-    #            gmlb=torch.trace(gmlb_v).item() / d_p)
 
+
+DATASET_SIZE2RUNNAME = {200: "fresh-glade-61",
+                        2000: "fallen-field-62",
+                        20000: "skilled-donkey-63",
+                        200000: "cool-deluge-70"}
 
 if __name__ == '__main__':
     pru.set_seed(0)
@@ -158,6 +156,8 @@ if __name__ == '__main__':
     gmean_re_list = []
     max_re_list = []
     for dataset_size in dataset_array:
+        run_name = DATASET_SIZE2RUNNAME[dataset_size]
+        _, _, cnf = load_run_data(run_name)
         samples_per_point = int(dataset_size / n_test_points)
         mcrb_est_array = parameter_sweep(opt_flow, p_true, n_test_points, linear_ms, samples_per_point)
         gmcrb_est_array = parameter_sweep(cnf, p_true, n_test_points, linear_ms, 128000)

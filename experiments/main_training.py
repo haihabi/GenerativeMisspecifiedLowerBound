@@ -23,6 +23,14 @@ def config() -> pru.ConfigReader:
     _cr.add_parameter("random_padding", type=str, default="false")
     _cr.add_parameter("padding_size", type=int, default=0)
     ###############################################
+    # CNF Parameters
+    ###############################################
+    _cr.add_parameter("n_blocks", type=int, default=1)
+    _cr.add_parameter("n_layer_inject", type=int, default=1)
+    _cr.add_parameter("n_hidden_inject", type=int, default=16)
+    _cr.add_parameter("inject_scale", type=str, default="false")
+    _cr.add_parameter("inject_bias", type=str, default="false")
+    ###############################################
     # Signal Model Parameter
     ###############################################
     _cr.add_parameter("model_name", type=str, default="LinearGaussian", enum=measurements_distributions.ModelName)
@@ -87,7 +95,14 @@ def run_main(in_run_parameters):
                                                                                             force_data_generation=in_run_parameters.force_data_generation)
     n_epochs = in_run_parameters.base_epochs * int(in_run_parameters.base_dataset_size / in_run_parameters.dataset_size)
     pru.logger.info(f"Number of epochs:{n_epochs}")
-    cnf = flow_models.generate_cnf_model(in_run_parameters.d_x, in_run_parameters.d_p, [constants.THETA])
+    cnf = flow_models.generate_cnf_model(in_run_parameters.d_x,
+                                         in_run_parameters.d_p,
+                                         [constants.THETA],
+                                         n_blocks=in_run_parameters.n_blocks,
+                                         n_layer_inject=in_run_parameters.n_layer_inject,
+                                         n_hidden_inject=in_run_parameters.n_hidden_inject,
+                                         inject_scale=in_run_parameters.inject_scale,
+                                         inject_bias=in_run_parameters.inject_bias)
     m_step = len(train_loader)
     opt = torch.optim.Adam(cnf.parameters(), lr=in_run_parameters.lr, weight_decay=in_run_parameters.weight_decay)
     ma = pru.MetricAveraging()
