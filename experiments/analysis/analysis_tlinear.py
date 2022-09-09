@@ -48,12 +48,9 @@ def compute_mean_covarinace(in_model, in_mu_overline, eps=1e-8):
 
 if __name__ == '__main__':
     pru.set_seed(0)
-    run_name = "copper-star-78"
+    run_name = "spring-totem-91"
 
     model, run_parameters, cnf = load_run_data(run_name)
-    # d_x = 16
-    # d_p = 2
-    # model = measurements_distributions.TruncatedLinearModel(d_x, d_p, 0.1, 10, a_limit=0)
     h_delta, l_delta = create_model_delta(run_parameters.d_x, run_parameters.d_p)
     h, c_xx_overline = get_h_and_c_xx(model)
 
@@ -80,6 +77,8 @@ if __name__ == '__main__':
 
         gmcrb_cnf, _, _ = gmlb.generative_misspecified_cramer_rao_bound_flow(cnf, 128000,
                                                                              linear_ms,
+                                                                             # min_limit=model.a,
+                                                                             # max_limit=model.b,
                                                                              **p_true)
         mc.insert(
             lb=torch.trace(lb).item() / run_parameters.d_p,
