@@ -6,6 +6,7 @@ from experiments import constants
 from experiments import flow_models
 from tqdm import tqdm
 import wandb
+import gmlb
 
 
 def config() -> pru.ConfigReader:

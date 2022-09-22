@@ -25,8 +25,8 @@ class TruncatedLinearModel(BaseModel):
                 f"A limit must be smaller than b limit the given values are a={self.a_limit} and b={self.b_limit}")
         self.delta = b_limit - a_limit
 
-        self.a = a_limit + 0.9 * (self.delta / 2) * torch.rand([d_x])
-        self.b = b_limit - 0.9 * (self.delta / 2) * torch.rand([d_x])
+        self.a = a_limit * torch.ones([d_x])
+        self.b = b_limit * torch.ones([d_x])
 
     @property
     def name(self) -> str:

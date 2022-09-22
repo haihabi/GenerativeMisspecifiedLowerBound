@@ -48,7 +48,7 @@ def compute_mean_covarinace(in_model, in_mu_overline, eps=1e-8):
 
 if __name__ == '__main__':
     pru.set_seed(0)
-    run_name = "spring-totem-91"
+    run_name = "denim-aardvark-96"
 
     model, run_parameters, cnf = load_run_data(run_name)
     h_delta, l_delta = create_model_delta(run_parameters.d_x, run_parameters.d_p)
@@ -71,14 +71,14 @@ if __name__ == '__main__':
         mcrb = linear_ms.calculate_mcrb(h, c_xx)
         p_zero = linear_ms.calculate_pseudo_true_parameter(mu.flatten())
         lb = gmlb.compute_lower_bound(mcrb, p_true[constants.THETA].flatten(), p_zero)
-        gmcrb, gmlb_v, p_zero_est = gmlb.generative_misspecified_cramer_rao_bound(model.generate_data, 128000,
+        gmcrb, gmlb_v, p_zero_est = gmlb.generative_misspecified_cramer_rao_bound(model.generate_data, 64000,
                                                                                   linear_ms,
                                                                                   **p_true)
 
-        gmcrb_cnf, _, _ = gmlb.generative_misspecified_cramer_rao_bound_flow(cnf, 128000,
+        gmcrb_cnf, _, _ = gmlb.generative_misspecified_cramer_rao_bound_flow(cnf, 64000,
                                                                              linear_ms,
-                                                                             # min_limit=model.a,
-                                                                             # max_limit=model.b,
+                                                                             min_limit=model.a,
+                                                                             max_limit=model.b,
                                                                              **p_true)
         mc.insert(
             lb=torch.trace(lb).item() / run_parameters.d_p,

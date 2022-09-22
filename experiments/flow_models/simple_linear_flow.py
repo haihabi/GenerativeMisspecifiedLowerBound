@@ -24,6 +24,4 @@ def build_simple_linear_flow(in_prior, in_d_x, in_d_p, in_cond_name_list, n_bloc
                                                                                 non_linear_function=nn.SiLU,
                                                                                 bias=inject_bias),
                                      scale=inject_scale))
-        # if coupling_layer and b != (n_blocks - 1):
-        #     flows.append(nfp.flows.AffineCoupling())
     return nfp.NormalizingFlowModel(in_prior, flows, condition_network=None).to(pru.torch.get_working_device())
