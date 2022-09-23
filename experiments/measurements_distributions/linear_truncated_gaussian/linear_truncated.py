@@ -5,7 +5,7 @@ from experiments.measurements_distributions.base_model import BaseModel
 from experiments.measurements_distributions.linear_gaussian.linear_optimal_flow import generate_c_xx_matrix, \
     generate_h_matrix
 from experiments.measurements_distributions import parameters_generator
-from experiments.measurements_distributions.linear_truncated_gaussian.truncated_gaussian import sample_truncated_normal
+from experiments.measurements_distributions.linear_truncated_gaussian.minimax_tilting_sampler import TruncatedMVN
 import pyresearchutils as pru
 
 VAR = 1.0
@@ -15,9 +15,9 @@ class TruncatedLinearModel(BaseModel):
     def __init__(self, d_x: int, d_p: int, norm_min: float, norm_max: float, a_limit: float = 5, b_limit: float = 5):
         parameters = parameters_generator.ParameterContainer(
             parameters_generator.NormGaussian(constants.THETA, d_p, 0, VAR, norm_min, norm_max))
-        super().__init__(d_x, parameters, has_optimal_flow=True, has_crb=False, has_mcrb=True)
+        super().__init__(d_x, d_p, parameters, has_optimal_flow=True, has_crb=False, has_mcrb=True)
         self.h = generate_h_matrix(d_x, d_p)
-        self.c_xx_bar = torch.diag(generate_c_xx_matrix(d_x).diag())
+        self.c_xx_bar = generate_c_xx_matrix(d_x).diag()
         self.a_limit = a_limit
         self.b_limit = b_limit
         if self.a_limit > self.b_limit:
@@ -54,8 +54,14 @@ class TruncatedLinearModel(BaseModel):
 
     def generate_data(self, n_samples, **kwargs):
         mu = torch.matmul(kwargs[constants.THETA], self.h.T)
-        x_s = sample_truncated_normal([n_samples, self.d_x], self.a, self.b, mu, torch.sqrt(self.c_xx_bar.diag()))
-        return x_s
+        if n_samples > 1:
+            raise NotImplemented
+            x_s = TruncatedMVN(pru.torch2numpy(mu), pru.torch2numpy(self.c_xx_bar), pru.torch2numpy(self.a),
+                               pru.torch2numpy(self.b)).sample(n_samples).T
+        else:
+            x_s = TruncatedMVN(pru.torch2numpy(mu).flatten(), pru.torch2numpy(self.c_xx_bar), pru.torch2numpy(self.a),
+                               pru.torch2numpy(self.b)).sample(n_samples).T
+        return pru.change2torch(x_s)
 
     @staticmethod
     def ml_estimator(r):

@@ -9,9 +9,11 @@ from torch.distributions import MultivariateNormal
 
 
 class BaseModel(object):
-    def __init__(self, d_x, parameters: parameters_generator.ParameterContainer, has_optimal_flow=False, has_crb=True,
+    def __init__(self, d_x, d_p, parameters: parameters_generator.ParameterContainer, has_optimal_flow=False,
+                 has_crb=True,
                  has_mcrb=True):
         self.d_x = d_x
+        self.d_p = d_p
         self.parameters = parameters
         self.has_crb = has_crb
         self.has_mcrb = has_mcrb

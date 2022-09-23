@@ -1,4 +1,4 @@
-# from experiments.measurements_distributions.linear_gaussian.linear_example import LinearModel
-# from experiments.measurements_distributions.linear_truncated_gaussian.linear_truncated import TruncatedLinearModel
+from experiments.measurements_distributions.linear_gaussian.linear_example import LinearModel
+from experiments.measurements_distributions.linear_truncated_gaussian.linear_truncated import TruncatedLinearModel
 from experiments.measurements_distributions.utils import generate_and_save_or_load_dataset, save_or_load_model
 from experiments.measurements_distributions.factory import get_measurement_distribution, ModelName

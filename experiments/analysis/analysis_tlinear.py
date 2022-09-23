@@ -59,7 +59,6 @@ if __name__ == '__main__':
 
     n_test = 20
     alpha_array = np.linspace(-0.5, 0.5, n_test)
-    # fig, axes = plt.subplots(1, 2, figsize=(12, 8), dpi=80)
     mc = pru.MetricCollector()
 
     for alpha in alpha_array:

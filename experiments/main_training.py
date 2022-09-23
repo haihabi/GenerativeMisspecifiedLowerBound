@@ -81,6 +81,18 @@ def validation_run(in_ma, in_validation_loader, in_cnf):
         in_ma.log(validation_nll=in_cnf.nll_mean(gamma, **param).item())
 
 
+def override_linear_parameters(in_datamodel, model_folder):
+    if isinstance(in_datamodel, measurements_distributions.TruncatedLinearModel):
+        file_list = os.listdir(os.path.join(model_folder, "models"))
+        model_file = f"LinearModel_{in_datamodel.d_x}_{in_datamodel.d_p}_model.pt"
+        if model_file in file_list:
+            data = torch.load(os.path.join(os.path.join(model_folder, "models"), model_file), map_location="cpu")
+            in_datamodel.h = data["h"]
+            in_datamodel.c_xx_bar = data["c_xx"]
+        else:
+            pru.logger.critical("Can\'t find matching Linear Matrix")
+
+
 def run_main(in_run_parameters):
     pru.set_seed(0)
     data_model = measurements_distributions.get_measurement_distribution(
@@ -92,6 +104,7 @@ def run_main(in_run_parameters):
         a_limit=in_run_parameters.min_limit,
         b_limit=in_run_parameters.max_limit)
     measurements_distributions.save_or_load_model(data_model, in_run_parameters.base_dataset_folder)
+    override_linear_parameters(data_model, in_run_parameters.base_dataset_folder)
     train_loader, val_loader = measurements_distributions.generate_and_save_or_load_dataset(data_model,
                                                                                             in_run_parameters.base_dataset_folder,
                                                                                             in_run_parameters.batch_size,
