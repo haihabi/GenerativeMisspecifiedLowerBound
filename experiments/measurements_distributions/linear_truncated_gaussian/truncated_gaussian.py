@@ -38,11 +38,3 @@ def sample_truncated_normal(in_shape, in_a, in_b, in_mu, in_sigma):
     x = inv_cdf((alpha_cdf + u * z).double()).float() * in_sigma + in_mu
     x[:, z.flatten() == 0] = in_a[z.flatten() == 0]
     return x
-
-
-def compute_mean(in_a, in_b, in_mu, in_sigma):
-    pass
-
-
-def compute_covarinace(in_a, in_b, in_mu, in_sigma):
-    pass

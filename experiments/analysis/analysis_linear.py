@@ -1,3 +1,5 @@
+import copy
+
 import numpy as np
 import torch
 
@@ -20,26 +22,35 @@ def parameter_sweep(in_flow, in_p_true, in_n_test_points, in_linear_ms, in_sampl
     for norm in norm_array:
         p_true[constants.THETA] = in_p_true[constants.THETA] / torch.norm(in_p_true[constants.THETA])
         p_true[constants.THETA] = in_p_true[constants.THETA] * norm
-        est_mcrb, _, _ = gmlb.generative_misspecified_cramer_rao_bound_flow(in_flow,
-                                                                            in_samples_per_point,
-                                                                            in_linear_ms, **p_true)
-        res_list.append(est_mcrb)
+        _, gmlb_v, _ = gmlb.generative_misspecified_cramer_rao_bound_flow(in_flow,
+                                                                          in_samples_per_point,
+                                                                          in_linear_ms, **p_true)
+        res_list.append(gmlb_v)
     return torch.stack(res_list)
 
 
-DATASET_SIZE2RUNNAME = {200: "fresh-glade-61",
-                        2000: "fallen-field-62",
-                        20000: "skilled-donkey-63",
-                        200000: "cool-deluge-70"}
+DATASET_SIZE2RUNNAME = {2: {200: "earthy-field-1051",
+                            2000: "prime-fog-103",
+                            20000: "dark-thunder-104",
+                            200000: "solar-plasma-102"},
+                        4: {200: "earthy-fog-117",
+                            2000: "different-terrain-112",
+                            20000: "fresh-haze-110",
+                            200000: "wise-aardvark-125"},
+                        8: {200: "breezy-leaf-131",
+                            2000: "northern-universe-129",
+                            20000: "fragrant-sun-127",
+                            200000: "charmed-resonance-122"}
+                        }
 
 if __name__ == '__main__':
     pru.set_seed(0)
     # run_name = "woven-snow-50"
-    run_name = "ethereal-meadow-51"
+    run_name = "charmed-resonance-122"
     model, config, cnf = load_run_data(run_name)
-    dataset_size = config["dataset_size"]
-    d_x = config["d_x"]
-    d_p = config["d_p"]
+    dataset_size = config.dataset_size
+    d_x = config.d_x
+    d_p = config.d_p
 
     h_delta = torch.randn(d_x, d_p) * 0.1
     c_vv_delta = torch.randn(d_x, d_x) * 0.1
@@ -52,20 +63,24 @@ if __name__ == '__main__':
     l_x = torch.linalg.cholesky(c_xx)
     l_delta = torch.linalg.cholesky(c_vv_delta)
     n_test = 20
-    alpha_array = np.linspace(-0.5, 0.5, n_test)
 
     mc = pru.MetricCollector()
-
+    alpha = 0.1
+    linear_ms = build_misspecifietion_type_one(h, l_x, h_delta, l_delta, alpha, 0.1)
     mc.clear()
-    for alpha in alpha_array:
-        linear_ms = build_misspecifietion_type_one(h, l_x, h_delta, l_delta, alpha, 0.3)
-        mcrb = linear_ms.calculate_mcrb(h, c_xx)
-        mu = torch.matmul(h, p_true[constants.THETA].flatten())
+    p_true_iter = copy.copy(p_true)
+    alpha_array = np.linspace(0.1, 10, 20)
+    mcrb = linear_ms.calculate_mcrb(h, c_xx)
+    for scale in alpha_array:
+        p_true_iter[constants.THETA] = p_true[constants.THETA] * scale / torch.norm(p_true[constants.THETA])
+
+        mu = torch.matmul(h, p_true_iter[constants.THETA].flatten())
         p_zero = linear_ms.calculate_pseudo_true_parameter(mu)
 
-        lb = gmlb.compute_lower_bound(mcrb, p_true[constants.THETA].flatten(), p_zero)
-        gmcrb, gmlb_v, _ = gmlb.generative_misspecified_cramer_rao_bound_flow(opt_flow, 50000, linear_ms, **p_true)
-        gmcrb_cnf, gmlb_cnf, _ = gmlb.generative_misspecified_cramer_rao_bound_flow(cnf, 50000, linear_ms, **p_true)
+        lb = gmlb.compute_lower_bound(mcrb, p_true_iter[constants.THETA].flatten(), p_zero)
+        gmcrb, gmlb_v, _ = gmlb.generative_misspecified_cramer_rao_bound_flow(opt_flow, 50000, linear_ms, **p_true_iter)
+        gmcrb_cnf, gmlb_cnf, _ = gmlb.generative_misspecified_cramer_rao_bound_flow(cnf, 50000, linear_ms,
+                                                                                    **p_true_iter)
         mc.insert(lb=torch.trace(lb).item() / d_p,
                   crb=torch.trace(linear_ms.crb()) / d_p,
                   mcrb=torch.trace(mcrb).item() / d_p,
@@ -74,24 +89,12 @@ if __name__ == '__main__':
                   gmlb_cnf=torch.trace(gmlb_cnf).item() / d_p,
                   gmlb=torch.trace(gmlb_v).item() / d_p)
     plt.figure(figsize=(8, 6), dpi=80)
-    plt.subplot(1, 2, 1)
-    plt.plot(alpha_array, np.asarray(mc["mcrb"]), label="MCRB")
-    plt.plot(alpha_array, np.asarray(mc["gmcrb"]), "o", label="GMCRB (Optimal)")
-    plt.plot(alpha_array, np.asarray(mc["gmcrb_cnf"]), "x", label="GMCRB (CNF)")
-    plt.xlabel(r"$\alpha$")
-    # plt.plot(alpha_array, np.ones(len(alpha_array)) * true_crb, label="CRB (True)")
-    # plt.plot(alpha_array, np.asarray(mc["crb"]), label="CRB (Assume)")
-    plt.legend()
-    plt.grid()
-    plt.subplot(1, 2, 2)
     plt.plot(alpha_array, np.asarray(mc["lb"]), label="LB")
     plt.plot(alpha_array, np.asarray(mc["gmlb"]), "o", label="GMLB (Optimal)")
     plt.plot(alpha_array, np.asarray(mc["gmlb_cnf"]), "x", label="GMLB (CNF)")
-    # plt.plot(alpha_array, np.ones(len(alpha_array)) * true_crb, label="CRB (True)")
-    # plt.plot(alpha_array, np.asarray(mc["crb"]), label="CRB (Assume)")
-
     plt.legend()
     plt.grid()
+    plt.tight_layout()
     plt.xlabel(r"$\alpha$")
     plt.savefig("compare.svg")
     plt.show()
@@ -125,7 +128,7 @@ if __name__ == '__main__':
     gmean_re_list = []
     max_re_list = []
     for dataset_size in dataset_array:
-        run_name = DATASET_SIZE2RUNNAME[dataset_size]
+        run_name = DATASET_SIZE2RUNNAME[8][dataset_size]
         _, _, cnf = load_run_data(run_name)
         samples_per_point = int(dataset_size / n_test_points)
         mcrb_est_array = parameter_sweep(opt_flow, p_true, n_test_points, linear_ms, samples_per_point)
@@ -135,80 +138,12 @@ if __name__ == '__main__':
         mean_re_list.append(torch.mean(re).item())
         gmean_re_list.append(torch.mean(gre).item())
         max_re_list.append(torch.max(re).item())
-    plt.semilogx(dataset_array, mean_re_list, label=r"$\overline{\mathrm{MCRB}}$")
-    plt.semilogx(dataset_array, gmean_re_list, label=r"$\mathrm{GMCRB}$")
-    # plt.semilogx(dataset_array, max_re_list)
+    plt.semilogx(dataset_array, mean_re_list, label=r"$\overline{\mathrm{LB}}$")
+    plt.semilogx(dataset_array, gmean_re_list, label=r"$\mathrm{GMLB}$")
     plt.legend()
     plt.xlabel("Dataset-size")
     plt.ylabel("xRE")
     plt.grid()
     plt.tight_layout()
+    plt.savefig("dataset-size-effect.svg")
     plt.show()
-    print("a")
-
-    # k = int(dataset_size / n_test_points)
-    # mc.clear()
-    # norm_array = torch.linspace(0.1, 3, n_test_points)
-    # for norm in norm_array:
-    #     p_true[constants.THETA] = p_true[constants.THETA] / torch.norm(p_true[constants.THETA])
-    #     p_true[constants.THETA] = p_true[constants.THETA] * norm
-    #     mu = torch.matmul(h, p_true[constants.THETA].flatten())
-    #     p_zero = linear_ms.calculate_pseudo_true_parameter(mu)
-    #     lb = gmlb.compute_lower_bound(mcrb, p_true[constants.THETA].flatten(), p_zero)
-    #     gmcrb, gmlb_v, _ = gmlb.generative_misspecified_cramer_rao_bound_flow(opt_flow,
-    #                                                                           int(dataset_size / n_test_points),
-    #                                                                           linear_ms, **p_true)
-    #     gmcrb_cnf, gmlb_cnf, _ = gmlb.generative_misspecified_cramer_rao_bound_flow(cnf, 64000,
-    #                                                                                 linear_ms, **p_true)
-    #     mc.insert(lb=torch.trace(lb).item() / d_p,
-    #               crb=torch.trace(linear_ms.crb()) / d_p,
-    #               mcrb=torch.trace(mcrb).item() / d_p,
-    #               gmcrb=torch.trace(gmcrb).item() / d_p,
-    #               gmcrb_cnf=torch.trace(gmcrb_cnf).item() / d_p,
-    #               gmlb_cnf=torch.trace(gmlb_cnf).item() / d_p,
-    #               gmlb=torch.trace(gmlb_v).item() / d_p)
-    # plt.subplot(1, 2, 1)
-    # plt.plot(norm_array.numpy(), mc["lb"], label="LB")
-    # plt.plot(norm_array.numpy(), mc["gmlb_cnf"], "o", label="GMLB (CNF)")
-    # plt.grid()
-    # plt.legend()
-    # plt.subplot(1, 2, 2)
-    # plt.plot(norm_array.numpy(), mc["lb"], label="LB")
-    # plt.plot(norm_array.numpy(), mc["gmlb"], "o", label=f"ELB ({k} Sample Per Point)")
-    # plt.grid()
-    # plt.legend()
-    # plt.savefig("dataset_size_ill.svg")
-    # plt.show()
-    print("a")
-    # plt.plot(alpha_array, np.asarray(mc["mcrb"]), "--", label="MCRB")
-    # plt.plot(alpha_array, np.asarray(mc["lb"]), "--", label="LB")
-    # plt.grid()
-    # plt.legend()
-    # plt.show()
-    #
-    # mc.clear()
-    # beta_array = np.linspace(-1.5, 1.5, 100)
-    # for beta in beta_array:
-    #     linear_ms = build_misspecifietion_type_one(h, c_xx, h_delta, c_vv_delta, 0.0, beta)
-    #     mcrb = linear_ms.calculate_mcrb(h, c_xx)
-    #     p_zero = linear_ms.calculate_pseudo_true_parameter(p_true[constants.THETA].flatten(), h)
-    #     lb = gmlb.compute_lower_bound(mcrb, p_true[constants.THETA].flatten(), p_zero)
-    #     gmcrb, gmlb_v = gmlb.generative_misspecified_cramer_rao_bound(opt_flow, 50000, linear_ms, **p_true)
-    #     mc.insert(lb=torch.trace(lb).item() / d_p,
-    #               mcrb=torch.trace(mcrb).item() / d_p,
-    #               gmcrb=torch.trace(gmcrb).item() / d_p,
-    #               gmlb=torch.trace(gmlb_v).item() / d_p)
-    #
-    # plt.subplot(1, 2, 1)
-    # plt.plot(beta_array, np.asarray(mc["mcrb"]), "--", label="MCRB")
-    # plt.plot(beta_array, np.asarray(mc["gmcrb"]), "-o", label="GMCRB (Optimal)")
-    # plt.plot(beta_array, np.ones(len(beta_array)) * true_crb, label="CRB (True)")
-    # plt.legend()
-    # plt.grid()
-    # plt.subplot(1, 2, 2)
-    # plt.plot(beta_array, np.asarray(mc["lb"]), "--", label="LB")
-    # plt.plot(beta_array, np.asarray(mc["gmlb"]), "-o", label="GMLB (Optimal)")
-    # plt.legend()
-    #
-    # plt.grid()
-    # plt.show()

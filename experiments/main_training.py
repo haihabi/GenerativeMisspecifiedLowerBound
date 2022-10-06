@@ -103,8 +103,8 @@ def run_main(in_run_parameters):
         norm_max=in_run_parameters.norm_max,
         a_limit=in_run_parameters.min_limit,
         b_limit=in_run_parameters.max_limit)
-    measurements_distributions.save_or_load_model(data_model, in_run_parameters.base_dataset_folder)
     override_linear_parameters(data_model, in_run_parameters.base_dataset_folder)
+    measurements_distributions.save_or_load_model(data_model, in_run_parameters.base_dataset_folder)
     train_loader, val_loader = measurements_distributions.generate_and_save_or_load_dataset(data_model,
                                                                                             in_run_parameters.base_dataset_folder,
                                                                                             in_run_parameters.batch_size,

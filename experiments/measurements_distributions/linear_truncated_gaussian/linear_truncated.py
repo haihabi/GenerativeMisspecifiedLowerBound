@@ -1,5 +1,6 @@
 import torch
 import os
+import numpy as np
 from experiments import constants
 from experiments.measurements_distributions.base_model import BaseModel
 from experiments.measurements_distributions.linear_gaussian.linear_optimal_flow import generate_c_xx_matrix, \
@@ -54,13 +55,26 @@ class TruncatedLinearModel(BaseModel):
 
     def generate_data(self, n_samples, **kwargs):
         mu = torch.matmul(kwargs[constants.THETA], self.h.T)
+        s = torch.min(self.a)
+        c = (self.b - self.a)[0]
+        mu = c * torch.arctan(3.3 * (mu - s) / c) / np.pi + s
+        # print("-" * 10)
+        # # print(mu)
+        # print(self.c_xx_bar)
+        # print("-" * 10)
         if n_samples > 1:
-            raise NotImplemented
-            x_s = TruncatedMVN(pru.torch2numpy(mu), pru.torch2numpy(self.c_xx_bar), pru.torch2numpy(self.a),
-                               pru.torch2numpy(self.b)).sample(n_samples).T
+            if mu.shape[0] == 1:
+                x_s = TruncatedMVN(pru.torch2numpy(mu).flatten(),
+                                   pru.torch2numpy(self.c_xx_bar.clone()),
+                                   pru.torch2numpy(self.a),
+                                   pru.torch2numpy(self.b)).sample(n_samples).T
+            else:
+                raise NotImplemented
+
         else:
-            x_s = TruncatedMVN(pru.torch2numpy(mu).flatten(), pru.torch2numpy(self.c_xx_bar), pru.torch2numpy(self.a),
+            x_s = TruncatedMVN(pru.torch2numpy(mu).flatten(), pru.torch2numpy(self.c_xx_bar.clone()), pru.torch2numpy(self.a),
                                pru.torch2numpy(self.b)).sample(n_samples).T
+
         return pru.change2torch(x_s)
 
     @staticmethod

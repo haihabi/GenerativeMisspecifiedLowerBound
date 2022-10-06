@@ -27,7 +27,7 @@ def generative_misspecified_cramer_rao_bound(data_generator, m,
 
     theta_true = kwargs.get(parameter_name)
     p_zero = ms_model.mml(x_s)
-    mcrb = estimate_mcrb(x_s, p_zero, ms_model)
+    mcrb, a_matrix, b_matrix = estimate_mcrb(x_s, p_zero, ms_model)
     lb = compute_lower_bound(mcrb, theta_true, p_zero)
     return mcrb, lb, p_zero
 

@@ -9,7 +9,7 @@ def estimate_mcrb(x: torch.Tensor, p_zero: torch.Tensor, ms_model: BaseMisSpecif
     b_matrix = torch.mean(
         torch.matmul(score.unsqueeze(dim=-1), score.unsqueeze(dim=1)), dim=0)
     mcrb = torch.matmul(torch.matmul(inv_a_matrix, b_matrix), inv_a_matrix)
-    return mcrb
+    return mcrb, a_matrix, b_matrix
 
 
 def compute_lower_bound(in_mcrb, theta_true, theta_zero):

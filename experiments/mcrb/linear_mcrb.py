@@ -18,7 +18,7 @@ class LinearMCRB(gmlb.BaseMisSpecifiedModel):
         return torch.matmul(torch.matmul(a_inv, b), a_inv)
 
     # TODO: change to mu
-    def calculate_pseudo_true_parameter(self,in_mu):
+    def calculate_pseudo_true_parameter(self, in_mu):
         u = torch.matmul(self.h.T, torch.matmul(self.c_vv_inv, in_mu))
         return torch.matmul(self.crb(), u)
 
@@ -33,4 +33,6 @@ class LinearMCRB(gmlb.BaseMisSpecifiedModel):
         return self._fim.reshape([1, self.p_dim, self.p_dim])
 
     def log_likelihood_jacobian(self, x, p):
-        return torch.matmul(self.h.T, torch.matmul(self.c_vv_inv, (x - torch.matmul(self.h, p).reshape([1, -1])).T)).T
+        delta_mean = (x - torch.matmul(self.h, p).reshape([1, -1])).T
+        print(delta_mean.mean(dim=-1))
+        return torch.matmul(self.h.T, torch.matmul(self.c_vv_inv, delta_mean)).T
