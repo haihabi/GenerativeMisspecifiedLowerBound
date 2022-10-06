@@ -34,5 +34,4 @@ class LinearMCRB(gmlb.BaseMisSpecifiedModel):
 
     def log_likelihood_jacobian(self, x, p):
         delta_mean = (x - torch.matmul(self.h, p).reshape([1, -1])).T
-        print(delta_mean.mean(dim=-1))
         return torch.matmul(self.h.T, torch.matmul(self.c_vv_inv, delta_mean)).T

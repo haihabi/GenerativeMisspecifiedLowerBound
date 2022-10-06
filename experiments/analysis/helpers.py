@@ -6,8 +6,38 @@ from experiments.mcrb.linear_mcrb import LinearMCRB
 from experiments import measurements_distributions
 from experiments import flow_models
 from argparse import Namespace
+import gmlb
+import copy
 
 FLOW_BEST = "flow_best.pt"
+
+
+def parameter_sweep(in_flow, in_p_true, in_n_test_points, in_linear_ms, in_samples_per_point, in_mcrb, in_h):
+    norm_array = torch.linspace(0.1, 3, in_n_test_points)
+    res_list = []
+    lb_list = []
+    _p_true = copy.copy(in_p_true)
+    for norm in norm_array:
+        _p_true[constants.THETA] = in_p_true[constants.THETA] / torch.norm(in_p_true[constants.THETA])
+        _p_true[constants.THETA] = _p_true[constants.THETA] * norm
+
+        _p_zero = in_linear_ms.calculate_pseudo_true_parameter(torch.matmul(in_h, _p_true[constants.THETA].flatten()))
+        _lb = gmlb.compute_lower_bound(in_mcrb, _p_true[constants.THETA].flatten(), _p_zero)
+
+        _, _gmlb_v, _ = gmlb.generative_misspecified_cramer_rao_bound_flow(in_flow,
+                                                                           in_samples_per_point,
+                                                                           in_linear_ms, **_p_true)
+        res_list.append(_gmlb_v)
+        lb_list.append(_lb)
+    return torch.stack(res_list), torch.stack(lb_list)
+
+
+def create_model_delta(in_d_x, in_d_p, scale=0.1):
+    _h_delta = torch.randn(in_d_x, in_d_p) * scale
+    c_vv_delta = torch.randn(in_d_x, in_d_x) * scale
+    c_vv_delta = torch.matmul(c_vv_delta, c_vv_delta.T)
+    _l_delta = torch.linalg.cholesky(c_vv_delta)
+    return _h_delta, _l_delta
 
 
 def download_file(in_run, in_file):

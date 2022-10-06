@@ -23,6 +23,9 @@ class LinearOptimalFlow(nfp.ConditionalBaseFlowLayer):
         self.c_xx = nn.Parameter(generate_c_xx_matrix(dim), requires_grad=False)
 
         self.dim = dim
+        self.build_sub_parameters()
+
+    def build_sub_parameters(self):
         l_matrix = torch.linalg.cholesky(self.c_xx)
         self.l_matrix = l_matrix
         self.l_matrix_inv = torch.linalg.inv(l_matrix)

@@ -29,6 +29,7 @@ class LinearModel(BaseModel):
     def load_data_model(self, folder):
         data = torch.load(os.path.join(folder, self.file_name), map_location="cpu")
         self.optimal_flow.load_state_dict(data)
+        self.optimal_flow.build_sub_parameters()
 
     def generate_data(self, n_samples, **kwargs):
         z = torch.randn([n_samples, self.d_x], device=pru.get_working_device())
