@@ -12,8 +12,9 @@ import copy
 FLOW_BEST = "flow_best.pt"
 
 
-def parameter_sweep(in_flow, in_p_true, in_n_test_points, in_linear_ms, in_samples_per_point, in_mcrb, in_h):
-    norm_array = torch.linspace(0.1, 3, in_n_test_points)
+def parameter_sweep(in_flow, in_p_true, in_n_test_points, in_linear_ms, in_samples_per_point, in_mcrb, in_h,
+                    norm_min=0.1, norm_max=10):
+    norm_array = torch.linspace(norm_min, norm_max, in_n_test_points)
     res_list = []
     lb_list = []
     _p_true = copy.copy(in_p_true)
@@ -21,7 +22,8 @@ def parameter_sweep(in_flow, in_p_true, in_n_test_points, in_linear_ms, in_sampl
         _p_true[constants.THETA] = in_p_true[constants.THETA] / torch.norm(in_p_true[constants.THETA])
         _p_true[constants.THETA] = _p_true[constants.THETA] * norm
 
-        _p_zero = in_linear_ms.calculate_pseudo_true_parameter(torch.matmul(in_h, _p_true[constants.THETA].flatten()))
+        mu_overline = torch.matmul(in_h, _p_true[constants.THETA].flatten())
+        _p_zero = in_linear_ms.calculate_pseudo_true_parameter(mu_overline)
         _lb = gmlb.compute_lower_bound(in_mcrb, _p_true[constants.THETA].flatten(), _p_zero)
 
         _, _gmlb_v, _ = gmlb.generative_misspecified_cramer_rao_bound_flow(in_flow,

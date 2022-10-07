@@ -27,55 +27,60 @@ def compute_mean_covarinace(in_model, in_mu_overline):
 
 if __name__ == '__main__':
     pru.set_seed(0)
-    run_name = "jolly-bird-158"
+    run_name = "earnest-disco-159"
     alpha = 0.1
     beta = 0.1
     n_test = 20
-
-    model, run_parameters, cnf = load_run_data(run_name)
-    h_delta, l_delta = create_model_delta(run_parameters.d_x, run_parameters.d_p)
-    h, c_xx_overline = get_h_and_c_xx(model)
-    l_x = torch.linalg.cholesky(c_xx_overline)
-    linear_ms = build_misspecifietion_type_one(h, l_x, h_delta, l_delta, alpha, beta)
-    p_true = model.parameters.random_sample_parameters()
-
-    mc = pru.MetricCollector()
+    generate_delta = True
     alpha_array = np.linspace(0.1, 10, 20)
-    p_true_iter = copy.copy(p_true)
+    for run_name in ["earnest-disco-159", "dutiful-field-161", "swift-pyramid-160"]:
+        model, run_parameters, cnf = load_run_data(run_name)
+        if generate_delta:
+            generate_delta = False
+            h_delta, l_delta = create_model_delta(run_parameters.d_x, run_parameters.d_p)
+            h, c_xx_overline = get_h_and_c_xx(model)
+            l_x = torch.linalg.cholesky(c_xx_overline)
+            linear_ms = build_misspecifietion_type_one(h, l_x, h_delta, l_delta, alpha, beta)
+            p_true = model.parameters.random_sample_parameters()
+        # print("---")
+        # print(h_delta)
 
-    for scale in alpha_array:
-        p_true_iter[constants.THETA] = p_true[constants.THETA] * scale / torch.norm(p_true[constants.THETA])
+        mc = pru.MetricCollector()
+        p_true_iter = copy.copy(p_true)
+        for scale in alpha_array:
+            p_true_iter[constants.THETA] = p_true[constants.THETA] * scale / torch.norm(p_true[constants.THETA])
 
-        mu_overline = soft_clip(torch.matmul(p_true_iter[constants.THETA], h.T), torch.min(model.a), torch.max(model.b))
+            mu_overline = soft_clip(torch.matmul(p_true_iter[constants.THETA], h.T), torch.min(model.a),
+                                    torch.max(model.b))
 
+            mu, c_xx = compute_mean_covarinace(model, mu_overline)
 
-        mu, c_xx = compute_mean_covarinace(model, mu_overline)
+            mcrb = linear_ms.calculate_mcrb(0, c_xx)
+            p_zero = linear_ms.calculate_pseudo_true_parameter(mu.flatten())
+            lb = gmlb.compute_lower_bound(mcrb, p_true_iter[constants.THETA].flatten(), p_zero)
 
-        mcrb = linear_ms.calculate_mcrb(0, c_xx)
-        p_zero = linear_ms.calculate_pseudo_true_parameter(mu.flatten())
-        lb = gmlb.compute_lower_bound(mcrb, p_true_iter[constants.THETA].flatten(), p_zero)
-        for i in range(1):
             gmcrb, gmlb_v, p_zero_est = gmlb.generative_misspecified_cramer_rao_bound(model.generate_data, 256000,
                                                                                       linear_ms,
                                                                                       **p_true_iter)
-            gmcrb_cnf, gmlb_cnf_v, _ = gmlb.generative_misspecified_cramer_rao_bound_flow(cnf, 64000,
+            gmcrb_cnf, gmlb_cnf_v, _ = gmlb.generative_misspecified_cramer_rao_bound_flow(cnf, 256000,
                                                                                           linear_ms,
                                                                                           min_limit=model.a,
                                                                                           max_limit=model.b,
                                                                                           **p_true_iter)
-        # raise NotImplemented
-        mc.insert(
-            lb=torch.trace(lb).item() / run_parameters.d_p,
-            crb=torch.trace(linear_ms.crb()) / run_parameters.d_p,
-            mcrb=torch.trace(mcrb).item() / run_parameters.d_p,
-            gmcrb=torch.trace(gmcrb).item() / run_parameters.d_p,
-            gmcrb_cnf=torch.trace(gmcrb_cnf).item() / run_parameters.d_p,
-            gmlb_cnf=torch.trace(gmlb_cnf_v).item() / run_parameters.d_p,
-            gmlb=torch.trace(gmlb_v).item() / run_parameters.d_p)
 
-    plt.plot(alpha_array, np.asarray(mc["gmlb"]), "o", label=f"GMCRB (Optimal)")
-    plt.plot(alpha_array, np.asarray(mc["gmlb_cnf"]), "o", label=f"GMCRB (CNF)")
-    plt.plot(alpha_array, np.asarray(mc["lb"]), label=f"LB")
+            mc.insert(
+                lb=torch.trace(lb).item() / run_parameters.d_p,
+                crb=torch.trace(linear_ms.crb()) / run_parameters.d_p,
+                mcrb=torch.trace(mcrb).item() / run_parameters.d_p,
+                gmcrb=torch.trace(gmcrb).item() / run_parameters.d_p,
+                gmcrb_cnf=torch.trace(gmcrb_cnf).item() / run_parameters.d_p,
+                gmlb_cnf=torch.trace(gmlb_cnf_v).item() / run_parameters.d_p,
+                gmlb=torch.trace(gmlb_v).item() / run_parameters.d_p)
+
+        plt.plot(alpha_array, np.asarray(mc["gmlb"]), "o", label=f"GMLB (Optimal) $a=$" + f"{run_parameters.min_limit}")
+        plt.plot(alpha_array, np.asarray(mc["gmlb_cnf"]), "x",
+                 label=f"GMLB (Trained) $a=$" + f"{run_parameters.min_limit}")
+        plt.plot(alpha_array, np.asarray(mc["lb"]), "--", label=f"LB $a=$" + f"{run_parameters.min_limit}")
     plt.grid()
     plt.legend()
     plt.tight_layout()

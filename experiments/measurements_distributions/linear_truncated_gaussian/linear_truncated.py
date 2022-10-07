@@ -14,7 +14,8 @@ VAR = 1.0
 
 
 class TruncatedLinearModel(BaseModel):
-    def __init__(self, d_x: int, d_p: int, norm_min: float, norm_max: float, a_limit: float = 5, b_limit: float = 5):
+    def __init__(self, d_x: int, d_p: int, norm_min: float, norm_max: float, a_limit: float = 5, b_limit: float = 5,
+                 non_linear_function=True):
         parameters = parameters_generator.ParameterContainer(
             parameters_generator.NormGaussian(constants.THETA, d_p, 0, VAR, norm_min, norm_max))
         super().__init__(d_x, d_p, parameters, has_optimal_flow=True, has_crb=False, has_mcrb=True)
@@ -29,10 +30,14 @@ class TruncatedLinearModel(BaseModel):
 
         self.a = a_limit * torch.ones([d_x])
         self.b = b_limit * torch.ones([d_x])
+        self.non_linear_function = non_linear_function
 
     @property
     def name(self) -> str:
-        return f"{super(TruncatedLinearModel, self).name}_{self.a_limit}_{self.b_limit}"
+        if self.non_linear_function:
+            return f"{super(TruncatedLinearModel, self).name}_{self.a_limit}_{self.b_limit}"
+        else:
+            return f"{super(TruncatedLinearModel, self).name}_{self.a_limit}_{self.b_limit}_identity"
 
     def state_dict(self):
         return {"h": self.h,
@@ -56,15 +61,7 @@ class TruncatedLinearModel(BaseModel):
 
     def generate_data(self, n_samples, **kwargs):
         mu = torch.matmul(kwargs[constants.THETA], self.h.T)
-
         mu = soft_clip(mu, torch.min(self.a), torch.max(self.b))
-        # s = torch.min(self.a)
-        # c = (self.b - self.a)[0]
-        # mu = c * torch.arctan(3.3 * (mu - s) / c) / np.pi + s
-        # print("-" * 10)
-        # # print(mu)
-        # print(self.c_xx_bar)
-        # print("-" * 10)
         if n_samples > 1:
             if mu.shape[0] == 1:
                 x_s = TruncatedMVN(pru.torch2numpy(mu).flatten(),

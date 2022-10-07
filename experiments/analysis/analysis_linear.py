@@ -78,14 +78,14 @@ if __name__ == '__main__':
     plt.figure(figsize=(8, 6), dpi=80)
     plt.plot(alpha_array, np.asarray(mc["lb"]), label="LB")
     plt.plot(alpha_array, np.asarray(mc["gmlb"]), "o", label="GMLB (Optimal)")
-    plt.plot(alpha_array, np.asarray(mc["gmlb_cnf"]), "x", label="GMLB (CNF)")
+    plt.plot(alpha_array, np.asarray(mc["gmlb_cnf"]), "x", label="GMLB (Trained)")
     plt.legend()
     plt.grid()
     plt.tight_layout()
     plt.xlabel(r"$\alpha$")
     plt.savefig("compare.svg")
     plt.show()
-
+    raise NotImplemented
     # p_true = model.parameters.random_sample_parameters()
 
     # dataset_array = [200, 2000, 20000, 200000]
