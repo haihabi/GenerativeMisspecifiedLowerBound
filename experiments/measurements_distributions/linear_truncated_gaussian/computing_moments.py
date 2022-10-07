@@ -83,27 +83,3 @@ def compute_second_order_state(in_lb, in_ub, in_mu, in_cov):
 
     return mu_vector, cov_matrix
 
-# if __name__ == '__main__':
-#     import pyresearchutils as pru
-#     from experiments.measurements_distributions.linear_truncated_gaussian.minimax_tilting_sampler import TruncatedMVN
-#
-#     n = 8
-#     a = 0
-#     b = 2.0
-#
-#     mu = np.zeros(n) + 0.2  # + 2 * np.random.rand(n)
-#     L = np.random.randn(n, n)
-#     c_xx = np.diag(np.ones(n))
-#     c_xx[1, 0] = c_xx[0, 1] = 0.8
-#
-#     n_samples_test = 100000
-#     samples_test = TruncatedMVN(mu, np.copy(c_xx), np.ones(n) * a, np.ones(n) * b).sample(n_samples_test)
-#     mu_trunc = samples_test.mean(axis=-1)
-#     dv = np.expand_dims(samples_test.T, axis=-1)
-#     cov_trunc = np.matmul(dv, np.transpose(dv, axes=(0, 2, 1))).mean(axis=0)
-#     pru.tic()
-#     mu, conv = compute_second_order_state(np.ones(n) * a, np.ones(n) * b, mu, np.copy(c_xx))
-#     pru.toc()
-#     print(mu_trunc)
-#     print(mu)
-#     pass

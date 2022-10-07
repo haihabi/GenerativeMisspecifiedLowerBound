@@ -132,3 +132,4 @@ dmypy.json
 *.pt
 *.pickle
 *.wandb
+/experiments/temp/

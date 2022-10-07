@@ -8,6 +8,7 @@ from experiments.measurements_distributions.linear_gaussian.linear_optimal_flow 
 from experiments.measurements_distributions import parameters_generator
 from experiments.measurements_distributions.linear_truncated_gaussian.minimax_tilting_sampler import TruncatedMVN
 import pyresearchutils as pru
+from experiments.measurements_distributions.linear_truncated_gaussian.softclip import soft_clip
 
 VAR = 1.0
 
@@ -55,9 +56,11 @@ class TruncatedLinearModel(BaseModel):
 
     def generate_data(self, n_samples, **kwargs):
         mu = torch.matmul(kwargs[constants.THETA], self.h.T)
-        s = torch.min(self.a)
-        c = (self.b - self.a)[0]
-        mu = c * torch.arctan(3.3 * (mu - s) / c) / np.pi + s
+
+        mu = soft_clip(mu, torch.min(self.a), torch.max(self.b))
+        # s = torch.min(self.a)
+        # c = (self.b - self.a)[0]
+        # mu = c * torch.arctan(3.3 * (mu - s) / c) / np.pi + s
         # print("-" * 10)
         # # print(mu)
         # print(self.c_xx_bar)
@@ -72,7 +75,8 @@ class TruncatedLinearModel(BaseModel):
                 raise NotImplemented
 
         else:
-            x_s = TruncatedMVN(pru.torch2numpy(mu).flatten(), pru.torch2numpy(self.c_xx_bar.clone()), pru.torch2numpy(self.a),
+            x_s = TruncatedMVN(pru.torch2numpy(mu).flatten(), pru.torch2numpy(self.c_xx_bar.clone()),
+                               pru.torch2numpy(self.a),
                                pru.torch2numpy(self.b)).sample(n_samples).T
 
         return pru.change2torch(x_s)
