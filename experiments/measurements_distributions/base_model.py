@@ -52,10 +52,14 @@ class BaseModel(object):
     def build_dataset(self, dataset_size, transform):
         data = []
         label = []
-        for _ in tqdm(range(dataset_size)):
-            param_dict = self.parameters.random_sample_parameters()
-            signal = self.generate_data(1, **param_dict)
-            data.append(signal.detach().cpu().numpy().flatten())
-            label.append({k: v.detach().cpu().numpy().flatten() for k, v in param_dict.items()})
+        # for _ in tqdm(range(dataset_size)):
+        with tqdm() as progress_bar:
+            while len(data) < dataset_size:
+                param_dict = self.parameters.random_sample_parameters()
+                signal = self.generate_data(1, **param_dict)
+                if signal is not None: # Making sure a valid sample has generated
+                    data.append(signal.detach().cpu().numpy().flatten())
+                    label.append({k: v.detach().cpu().numpy().flatten() for k, v in param_dict.items()})
+                progress_bar.update(1.0)
 
         return pru.NumpyDataset(data, label, transform)

@@ -47,6 +47,7 @@ class TruncatedMVN:
 
     def __init__(self, mu, cov, lb, ub):
         self.dim = len(mu)
+        self.success = False
         if not cov.shape[0] == cov.shape[1]:
             raise RuntimeError("Covariance matrix must be of shape DxD!")
         if not (self.dim == cov.shape[0] and self.dim == len(lb) and self.dim == len(ub)):
@@ -143,6 +144,7 @@ class TruncatedMVN:
         sol = optimize.root(gradpsi, x0, args=(self.L, self.lb, self.ub), method='hybr', jac=True)
         if not sol.success:
             print('Warning: Method may fail as covariance matrix is close to singular!')
+        self.success = sol.success
         self.x = sol.x[:self.dim - 1]
         self.mu = sol.x[self.dim - 1:]
 

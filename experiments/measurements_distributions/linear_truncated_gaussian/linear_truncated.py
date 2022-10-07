@@ -43,7 +43,8 @@ class TruncatedLinearModel(BaseModel):
         return {"h": self.h,
                 "c_xx_bar": self.c_xx_bar,
                 "a": self.a,
-                "b": self.b}
+                "b": self.b,
+                "non_linear_function": self.non_linear_function}
 
     @property
     def file_name(self):
@@ -58,24 +59,27 @@ class TruncatedLinearModel(BaseModel):
         self.c_xx_bar = data["c_xx_bar"]
         self.a = data["a"]
         self.b = data["b"]
+        self.non_linear_function = data["non_linear_function"]
 
     def generate_data(self, n_samples, **kwargs):
         mu = torch.matmul(kwargs[constants.THETA], self.h.T)
-        mu = soft_clip(mu, torch.min(self.a), torch.max(self.b))
+        if self.non_linear_function:
+            mu = soft_clip(mu, torch.min(self.a), torch.max(self.b))
+        mu = torch.clip(mu, min=torch.min(self.a), max=torch.max(self.b))
+        tmvn = TruncatedMVN(pru.torch2numpy(mu).flatten(),
+                            pru.torch2numpy(self.c_xx_bar.clone()),
+                            pru.torch2numpy(self.a),
+                            pru.torch2numpy(self.b))
         if n_samples > 1:
             if mu.shape[0] == 1:
-                x_s = TruncatedMVN(pru.torch2numpy(mu).flatten(),
-                                   pru.torch2numpy(self.c_xx_bar.clone()),
-                                   pru.torch2numpy(self.a),
-                                   pru.torch2numpy(self.b)).sample(n_samples).T
+                x_s = tmvn.sample(n_samples).T
             else:
                 raise NotImplemented
 
         else:
-            x_s = TruncatedMVN(pru.torch2numpy(mu).flatten(), pru.torch2numpy(self.c_xx_bar.clone()),
-                               pru.torch2numpy(self.a),
-                               pru.torch2numpy(self.b)).sample(n_samples).T
-
+            x_s = tmvn.sample(n_samples).T
+        if not tmvn.success:
+            return None
         return pru.change2torch(x_s)
 
     @staticmethod
