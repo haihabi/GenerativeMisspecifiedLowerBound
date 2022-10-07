@@ -27,7 +27,7 @@ def compute_mean_covarinace(in_model, in_mu_overline):
 
 if __name__ == '__main__':
     pru.set_seed(0)
-    run_name = "glad-smoke-154"
+    run_name = "jolly-bird-158"
     alpha = 0.1
     beta = 0.1
     n_test = 20
@@ -47,9 +47,7 @@ if __name__ == '__main__':
         p_true_iter[constants.THETA] = p_true[constants.THETA] * scale / torch.norm(p_true[constants.THETA])
 
         mu_overline = soft_clip(torch.matmul(p_true_iter[constants.THETA], h.T), torch.min(model.a), torch.max(model.b))
-        # s = torch.min(model.a)
-        # c = (model.b - model.a)[0]
-        # mu_overline = c * torch.arctan(3.3 * (torch.matmul(p_true_iter[constants.THETA], h.T) - s) / c) / np.pi + s
+
 
         mu, c_xx = compute_mean_covarinace(model, mu_overline)
 
