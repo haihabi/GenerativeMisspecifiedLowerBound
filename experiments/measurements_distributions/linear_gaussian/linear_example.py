@@ -16,6 +16,17 @@ class LinearModel(BaseModel):
         super().__init__(d_x, d_p, parameters, has_optimal_flow=True, has_crb=True, has_mcrb=True)
         self.optimal_flow = LinearOptimalFlow(self.d_x, self.parameter_vector_length)
 
+        # self.h = generate_h_matrix(d_x, d_p)
+        # self.c_xx_bar = generate_c_xx_matrix(d_x).diag()
+
+    @property
+    def h(self):
+        return self.optimal_flow.h
+
+    @property
+    def c_xx_bar(self):
+        return self.optimal_flow.c_xx
+
     def _get_optimal_model(self):
         return self.optimal_flow
 

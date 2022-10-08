@@ -9,29 +9,69 @@ from argparse import Namespace
 import gmlb
 import copy
 
+from experiments.measurements_distributions.linear_truncated_gaussian.computing_moments import \
+    compute_second_order_state
+from experiments.measurements_distributions.linear_truncated_gaussian.softclip import soft_clip
+
 FLOW_BEST = "flow_best.pt"
 
 
-def parameter_sweep(in_flow, in_p_true, in_n_test_points, in_linear_ms, in_samples_per_point, in_mcrb, in_h,
-                    norm_min=0.1, norm_max=10):
+def get_h_and_c_xx(in_model):
+    return in_model.h, in_model.c_xx_bar
+
+
+def compute_mean_covarinace_truncated_norm(in_model, in_mu_overline):
+    lb = in_model.a.detach().cpu().numpy()
+    ub = in_model.b.detach().cpu().numpy()
+    c_xx_bar = in_model.c_xx_bar.detach().cpu().numpy()
+    _mu, _c_xx = compute_second_order_state(lb, ub, in_mu_overline.detach().cpu().numpy().flatten(), c_xx_bar)
+    return torch.tensor(_mu).float(), torch.tensor(_c_xx).float()
+
+
+def parameter_sweep(in_flow, in_p_true, in_n_test_points, in_linear_ms, in_samples_per_point, in_model,
+                    norm_min=0.1, norm_max=10, non_linear=False, run_optimal=False):
     norm_array = torch.linspace(norm_min, norm_max, in_n_test_points)
     res_list = []
+    res_opt_list = []
     lb_list = []
     _p_true = copy.copy(in_p_true)
+    h, c_xx = get_h_and_c_xx(in_model)
     for norm in norm_array:
         _p_true[constants.THETA] = in_p_true[constants.THETA] / torch.norm(in_p_true[constants.THETA])
         _p_true[constants.THETA] = _p_true[constants.THETA] * norm
 
-        mu_overline = torch.matmul(in_h, _p_true[constants.THETA].flatten())
-        _p_zero = in_linear_ms.calculate_pseudo_true_parameter(mu_overline)
-        _lb = gmlb.compute_lower_bound(in_mcrb, _p_true[constants.THETA].flatten(), _p_zero)
+        mu = torch.matmul(h, _p_true[constants.THETA].flatten())
+        if isinstance(in_model, measurements_distributions.TruncatedLinearModel):
+            mu_overline = mu
+            if non_linear:
+                mu_overline = soft_clip(mu_overline, torch.min(in_model.a), torch.min(in_model.b))
+            mu_overline = torch.clip(mu_overline, min=torch.min(in_model.a), max=torch.min(in_model.b))
+            mu, c_xx = compute_mean_covarinace_truncated_norm(in_model, mu_overline)
+
+        _mcrb = in_linear_ms.calculate_mcrb(0, c_xx)
+        _p_zero = in_linear_ms.calculate_pseudo_true_parameter(mu)
+        _lb = gmlb.compute_lower_bound(_mcrb, _p_true[constants.THETA].flatten(), _p_zero)
 
         _, _gmlb_v, _ = gmlb.generative_misspecified_cramer_rao_bound_flow(in_flow,
                                                                            in_samples_per_point,
                                                                            in_linear_ms, **_p_true)
+        if run_optimal:
+            if isinstance(in_model, measurements_distributions.TruncatedLinearModel):
+                _, _gmlb_v_optimal, _ = gmlb.generative_misspecified_cramer_rao_bound(in_model.generate_data,
+                                                                                      in_samples_per_point,
+                                                                                      in_linear_ms,
+                                                                                      **_p_true)
+            else:
+                _, _gmlb_v_optimal, _ = gmlb.generative_misspecified_cramer_rao_bound_flow(in_model.get_optimal_model(),
+                                                                                           in_samples_per_point,
+                                                                                           in_linear_ms, **_p_true)
+            res_opt_list.append(_gmlb_v_optimal)
+
         res_list.append(_gmlb_v)
         lb_list.append(_lb)
-    return torch.stack(res_list), torch.stack(lb_list)
+    if len(res_opt_list) == 0:
+        return torch.stack(res_list), None, torch.stack(lb_list), norm_array
+    return torch.stack(res_list), torch.stack(res_opt_list), torch.stack(lb_list), norm_array
 
 
 def create_model_delta(in_d_x, in_d_p, scale=0.1):
@@ -62,6 +102,8 @@ def load_run_data(in_run_name):
         print(run.name, run.state)
         if run.name == in_run_name:
             download_file(run, FLOW_BEST)
+            if run.config.get("non_linear_function") is None:
+                run.config["non_linear_function"] = False
             run_parameters = Namespace(**run.config)
 
             model_name = measurements_distributions.ModelName[run.config['model_name'].split(".")[-1]]
@@ -72,7 +114,8 @@ def load_run_data(in_run_name):
                 norm_min=run_parameters.norm_min,
                 norm_max=run_parameters.norm_max,
                 a_limit=float(run_parameters.min_limit),
-                b_limit=float(run_parameters.max_limit))
+                b_limit=float(run_parameters.max_limit),
+                non_linear_function=run_parameters.non_linear_function)
             _cnf = flow_models.generate_cnf_model(run_parameters.d_x,
                                                   run_parameters.d_p,
                                                   [constants.THETA],
