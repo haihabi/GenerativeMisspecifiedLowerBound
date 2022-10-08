@@ -10,7 +10,7 @@
   "random_padding": false,
   "padding_size": 0,
   "n_blocks": 3,
-  "n_layer_inject": 5,
+  "n_layer_inject": 4,
   "n_hidden_inject": 24,
   "inject_scale": false,
   "inject_bias": true,
@@ -18,13 +18,13 @@
   "d_x": 8,
   "d_p": 8,
   "norm_min": 0.1,
-  "norm_max": 10.0,
-  "min_limit": -5.0,
+  "norm_max": 5.0,
+  "min_limit": 0.0,
   "max_limit": 5.0,
   "base_dataset_folder": "./temp/datasets",
   "batch_size": 512,
-  "dataset_size": 200000,
+  "dataset_size": 200,
   "val_dataset_size": 20000,
-  "force_data_generation": true,
-  "non_linear_function": false
+  "force_data_generation": false,
+  "non_linear_function": true
 }

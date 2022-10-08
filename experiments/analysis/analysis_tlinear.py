@@ -20,10 +20,10 @@ if __name__ == '__main__':
     n_test = 20
     d_p = 8
     generate_delta = True
-    norm_max = True
+    norm_max = 9
     m = 640000
-    alpha_array = np.linspace(0.1, 10, 20)
-    for run_name in ["treasured-surf-177", "bright-aardvark-180"]:
+    # alpha_array = np.linspace(0.1, 10, 20)
+    for run_name in ["treasured-surf-177", "bright-aardvark-180", "dandy-dream-181"]:
         model, run_parameters, cnf = load_run_data(run_name)
         if generate_delta:
             generate_delta = False
@@ -38,20 +38,21 @@ if __name__ == '__main__':
                                                                                   norm_max=norm_max, run_optimal=True,
                                                                                   non_linear=run_parameters.non_linear_function)
 
-        plt.plot(norm_array.detach().numpy(),
+        plt.semilogy(norm_array.detach().numpy(),
                  (torch.diagonal(lb_array_z, dim1=1, dim2=2).sum(dim=-1) / d_p).detach().numpy(),
-                 label=f"LB")
-        plt.plot(norm_array.detach().numpy(),
+                 label=f"LB-a={run_parameters.min_limit}")
+        plt.semilogy(norm_array.detach().numpy(),
                  (torch.diagonal(mcrb_est_array, dim1=1, dim2=2).sum(dim=-1) / d_p).detach().numpy(), "o",
-                 label=f"GMLB (Optimal)")
-        plt.plot(norm_array.detach().numpy(),
+                 label=f"GMLB (Optimal)-a={run_parameters.min_limit}")
+        plt.semilogy(norm_array.detach().numpy(),
                  (torch.diagonal(gmcrb_est_array, dim1=1, dim2=2).sum(dim=-1) / d_p).detach().numpy(), "x",
-                 label=f"GMLB (Trained)")
+                 label=f"GMLB (Trained)-a={run_parameters.min_limit}")
     plt.grid()
     plt.legend()
     plt.xlabel(r"$\alpha$")
     plt.ylabel(r"$\frac{\mathrm{Tr}(LB)}{d_p}$")
     plt.tight_layout()
+    plt.savefig("compare_nltn.svg")
     plt.show()
     # print("---")
     # print(h_delta)
@@ -88,13 +89,13 @@ if __name__ == '__main__':
     #         gmcrb_cnf=torch.trace(gmcrb_cnf).item() / run_parameters.d_p,
     #         gmlb_cnf=torch.trace(gmlb_cnf_v).item() / run_parameters.d_p,
     #         gmlb=torch.trace(gmlb_v).item() / run_parameters.d_p)
-
-    plt.plot(alpha_array, np.asarray(mc["gmlb"]), "o", label=f"GMLB (Optimal) $a=$" + f"{run_parameters.min_limit}")
-    plt.plot(alpha_array, np.asarray(mc["gmlb_cnf"]), "x",
-             label=f"GMLB (Trained) $a=$" + f"{run_parameters.min_limit}")
-    plt.plot(alpha_array, np.asarray(mc["lb"]), "--", label=f"LB $a=$" + f"{run_parameters.min_limit}")
-plt.grid()
-plt.legend()
-plt.tight_layout()
-plt.savefig("trunced_res.svg")
-plt.show()
+#
+#     plt.plot(alpha_array, np.asarray(mc["gmlb"]), "o", label=f"GMLB (Optimal) $a=$" + f"{run_parameters.min_limit}")
+#     plt.plot(alpha_array, np.asarray(mc["gmlb_cnf"]), "x",
+#              label=f"GMLB (Trained) $a=$" + f"{run_parameters.min_limit}")
+#     plt.plot(alpha_array, np.asarray(mc["lb"]), "--", label=f"LB $a=$" + f"{run_parameters.min_limit}")
+# plt.grid()
+# plt.legend()
+# plt.tight_layout()
+# plt.savefig("trunced_res.svg")
+# plt.show()
