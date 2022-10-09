@@ -17,18 +17,20 @@ def trim(in_data, in_min_limit, in_max_limit):
 def generative_misspecified_cramer_rao_bound(data_generator, m,
                                              ms_model: BaseMisSpecifiedModel,
                                              parameter_name="theta", min_limit=None, max_limit=None, **kwargs):
-    x_s = data_generator(m, **kwargs)
-    if min_limit is not None or max_limit is not None:
-        x_s_trim = trim(x_s, min_limit, max_limit)
-        while x_s_trim.shape[0] < m:
-            x_s = data_generator(m, **kwargs)
-            x_s_trim = torch.cat([x_s_trim, trim(x_s, min_limit, max_limit)])
-        x_s = x_s_trim[:m, :]
+    with torch.no_grad():
+        x_s = data_generator(m, **kwargs)
+        if min_limit is not None or max_limit is not None:
+            x_s_trim = trim(x_s, min_limit, max_limit)
+            while x_s_trim.shape[0] < m:
+                x_s = data_generator(m, **kwargs)
+                x_s_trim = torch.cat([x_s_trim, trim(x_s, min_limit, max_limit)])
+            x_s = x_s_trim[:m, :]
 
-    theta_true = kwargs.get(parameter_name)
-    p_zero = ms_model.mml(x_s)
-    mcrb, a_matrix, b_matrix = estimate_mcrb(x_s, p_zero, ms_model)
-    lb = compute_lower_bound(mcrb, theta_true, p_zero)
+        theta_true = kwargs.get(parameter_name)
+        p_zero = ms_model.mml(x_s)
+        mcrb, a_matrix, b_matrix = estimate_mcrb(x_s, p_zero, ms_model)
+        lb = compute_lower_bound(mcrb, theta_true, p_zero)
+
     return mcrb, lb, p_zero
 
 

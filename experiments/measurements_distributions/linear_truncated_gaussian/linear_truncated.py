@@ -20,7 +20,7 @@ class TruncatedLinearModel(BaseModel):
             parameters_generator.NormGaussian(constants.THETA, d_p, 0, VAR, norm_min, norm_max))
         super().__init__(d_x, d_p, parameters, has_optimal_flow=True, has_crb=False, has_mcrb=True)
         self.h = generate_h_matrix(d_x, d_p)
-        self.c_xx_bar = generate_c_xx_matrix(d_x).diag()
+        self.c_xx_bar = generate_c_xx_matrix(d_x)
         self.a_limit = a_limit
         self.b_limit = b_limit
         if self.a_limit > self.b_limit:

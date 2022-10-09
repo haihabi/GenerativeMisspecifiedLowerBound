@@ -9,11 +9,11 @@ def soft_clip(x, a, b, r=0.5):
     # c = (b - a)
     # z[x > b - r] = b - r + r * (1 - torch.exp(-torch.abs(x[x > b - r] - b + r)))
     # z[x < a + r] = a + r - r * (1 - torch.exp(-torch.abs(x[x < a + r] - a - r)))
-    z = (b - a) * torch.sigmoid(x) + a
+    # z = (b - a) * torch.sigmoid(x) + a
+    # z = (x - a) * torch.sigmoid(x-a)
     # s = a
-    # c = b - a
-    # z = c * torch.arctan(3.3 * (x - s) / c) / np.pi + s
-
+    c = b - a
+    z = c * torch.arctan(x) / np.pi
     return z
 
 

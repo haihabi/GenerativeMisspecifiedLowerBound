@@ -12,6 +12,7 @@ import copy
 from experiments.measurements_distributions.linear_truncated_gaussian.computing_moments import \
     compute_second_order_state
 from experiments.measurements_distributions.linear_truncated_gaussian.softclip import soft_clip
+from tqdm import tqdm
 
 FLOW_BEST = "flow_best.pt"
 
@@ -29,14 +30,14 @@ def compute_mean_covarinace_truncated_norm(in_model, in_mu_overline):
 
 
 def parameter_sweep(in_flow, in_p_true, in_n_test_points, in_linear_ms, in_samples_per_point, in_model,
-                    norm_min=0.1, norm_max=10, non_linear=False, run_optimal=False):
+                    norm_min=0.1, norm_max=10, non_linear=False, run_optimal=False, run_model=True):
     norm_array = torch.linspace(norm_min, norm_max, in_n_test_points)
     res_list = []
     res_opt_list = []
     lb_list = []
     _p_true = copy.copy(in_p_true)
     h, c_xx = get_h_and_c_xx(in_model)
-    for norm in norm_array:
+    for norm in tqdm(norm_array):
         _p_true[constants.THETA] = in_p_true[constants.THETA] / torch.norm(in_p_true[constants.THETA])
         _p_true[constants.THETA] = _p_true[constants.THETA] * norm
 
@@ -51,10 +52,12 @@ def parameter_sweep(in_flow, in_p_true, in_n_test_points, in_linear_ms, in_sampl
         _mcrb = in_linear_ms.calculate_mcrb(0, c_xx)
         _p_zero = in_linear_ms.calculate_pseudo_true_parameter(mu)
         _lb = gmlb.compute_lower_bound(_mcrb, _p_true[constants.THETA].flatten(), _p_zero)
-
-        _, _gmlb_v, _ = gmlb.generative_misspecified_cramer_rao_bound_flow(in_flow,
-                                                                           in_samples_per_point,
-                                                                           in_linear_ms, **_p_true)
+        lb_list.append(_lb)
+        if run_model:
+            _, _gmlb_v, _ = gmlb.generative_misspecified_cramer_rao_bound_flow(in_flow,
+                                                                               in_samples_per_point,
+                                                                               in_linear_ms, **_p_true)
+            res_list.append(_gmlb_v)
         if run_optimal:
             if isinstance(in_model, measurements_distributions.TruncatedLinearModel):
                 _, _gmlb_v_optimal, _ = gmlb.generative_misspecified_cramer_rao_bound(in_model.generate_data,
@@ -67,11 +70,12 @@ def parameter_sweep(in_flow, in_p_true, in_n_test_points, in_linear_ms, in_sampl
                                                                                            in_linear_ms, **_p_true)
             res_opt_list.append(_gmlb_v_optimal)
 
-        res_list.append(_gmlb_v)
-        lb_list.append(_lb)
-    if len(res_opt_list) == 0:
-        return torch.stack(res_list), None, torch.stack(lb_list), norm_array
-    return torch.stack(res_list), torch.stack(res_opt_list), torch.stack(lb_list), norm_array
+    if len(res_list) > 0: res_list = torch.stack(res_list)
+    if len(res_opt_list) > 0:
+        res_opt_list = torch.stack(res_opt_list)
+    lb_list = torch.stack(lb_list)
+
+    return res_list, res_opt_list, lb_list, norm_array
 
 
 def create_model_delta(in_d_x, in_d_p, scale=0.1):

@@ -133,3 +133,4 @@ dmypy.json
 *.pickle
 *.wandb
 /experiments/temp/
+*.svg

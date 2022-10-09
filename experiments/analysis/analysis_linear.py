@@ -39,7 +39,7 @@ if __name__ == '__main__':
     beta = 0.1
     n_test = 20
     m = 64000
-    norm_max = 10
+    norm_max = 9
 
     model, config, cnf = load_run_data(run_name)
     h_delta, l_delta = create_model_delta(config.d_x, config.d_p)
@@ -77,13 +77,13 @@ if __name__ == '__main__':
         model_name = f"LTG-" + r"$a=$" + f"{min_limit}"
         if 'ModelName.LinearGaussian' == config.model_name:
             model_name = "LG"
-        plt.plot(norm_array.detach().numpy(),
+        plt.semilogy(norm_array.detach().numpy(),
                  (torch.diagonal(lb_array_z, dim1=1, dim2=2).sum(dim=-1) / d_p).detach().numpy(),
                  label=f"LB-{model_name}")
-        plt.plot(norm_array.detach().numpy(),
+        plt.semilogy(norm_array.detach().numpy(),
                  (torch.diagonal(mcrb_est_array, dim1=1, dim2=2).sum(dim=-1) / d_p).detach().numpy(), "o",
                  label=f"GMLB (Optimal)-{model_name}")
-        plt.plot(norm_array.detach().numpy(),
+        plt.semilogy(norm_array.detach().numpy(),
                  (torch.diagonal(gmcrb_est_array, dim1=1, dim2=2).sum(dim=-1) / d_p).detach().numpy(), "x",
                  label=f"GMLB (Trained)-{model_name}")
 
