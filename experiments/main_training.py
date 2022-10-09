@@ -58,7 +58,8 @@ def flow_training_loop(in_step_per_epoch,
                        in_train_loader,
                        in_cnf,
                        in_opt,
-                       in_ma):
+                       in_ma,
+                       in_grad_norm_clipping):
     in_cnf.train()
     with tqdm(total=in_step_per_epoch) as progress_bar:
         for i, (gamma, param) in enumerate(in_train_loader):
@@ -67,6 +68,9 @@ def flow_training_loop(in_step_per_epoch,
             in_opt.zero_grad()
             loss = in_cnf.nll_mean(gamma, **param)
             loss.backward()
+            if in_grad_norm_clipping > 0:
+                torch.nn.utils.clip_grad.clip_grad_norm_(in_cnf.parameters(),
+                                                         max_norm=in_grad_norm_clipping)
             in_opt.step()
             in_ma.log(loss=loss.item())
 
@@ -128,7 +132,7 @@ def run_main(in_run_parameters):
     ma = pru.MetricAveraging()
     validation_mod = int(n_epochs / in_run_parameters.n_validation_points)
     for e in range(n_epochs):
-        flow_training_loop(m_step, train_loader, cnf, opt, ma)
+        flow_training_loop(m_step, train_loader, cnf, opt, ma, in_run_parameters.grad_norm_clipping)
         if e % validation_mod == 0:
             validation_run(ma, val_loader, cnf)
         results_log = ma.result

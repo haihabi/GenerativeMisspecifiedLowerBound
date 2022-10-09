@@ -19,11 +19,11 @@
   "d_p": 8,
   "norm_min": 0.1,
   "norm_max": 5.0,
-  "min_limit": 0.0,
+  "min_limit": -5.0,
   "max_limit": 5.0,
   "base_dataset_folder": "./temp/datasets",
   "batch_size": 512,
-  "dataset_size": 200,
+  "dataset_size": 200000,
   "val_dataset_size": 20000,
   "force_data_generation": false,
   "non_linear_function": true

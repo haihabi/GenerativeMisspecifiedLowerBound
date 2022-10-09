@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 
-SLOP = 1.0
+SLOP = 0.1
 
 
 def soft_clip(x, a, b, r=0.5):
@@ -13,7 +13,7 @@ def soft_clip(x, a, b, r=0.5):
     # z = (x - a) * torch.sigmoid(x-a)
     # s = a
     c = b - a
-    z = c * torch.arctan(x) / np.pi
+    z = c * torch.arctan(SLOP*x) / np.pi
     return z
 
 

@@ -24,4 +24,12 @@ def build_simple_linear_flow(in_prior, in_d_x, in_d_p, in_cond_name_list, n_bloc
                                                                                 non_linear_function=nn.SiLU,
                                                                                 bias=inject_bias),
                                      scale=inject_scale))
+        if True:
+            flows.append(nfp.flows.AffineCoupling(x_shape=input_vector_shape,
+                                                  parity=b % 2,
+                                                  net_class=nfp.base_nets.generate_mlp_class(n_layer=n_layer_inject,
+                                                                                             non_linear_function=nn.SiLU,
+                                                                                             bias=inject_bias),
+                                                  nh=n_hidden_inject, scale=False))
+
     return nfp.NormalizingFlowModel(in_prior, flows, condition_network=None).to(pru.torch.get_working_device())
