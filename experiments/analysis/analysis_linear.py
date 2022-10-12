@@ -37,10 +37,9 @@ if __name__ == '__main__':
     run_name = "charmed-resonance-122"
     alpha = 0.1
     beta = 0.1
-    n_test = 20
     m = 64000
     norm_max = 9
-
+    n_test = 20
     model, config, cnf = load_run_data(run_name)
     h_delta, l_delta = create_model_delta(config.d_x, config.d_p)
     h, c_xx = get_h_and_c_xx(model)
@@ -64,28 +63,36 @@ if __name__ == '__main__':
     plt.figure(figsize=(8, 6), dpi=80)
     for run in ["charmed-resonance-122"]:
         model, config, cnf = load_run_data(run)
-        # if isinstance(model, measurements_distributions.TruncatedLinearModel):
-        #     mcrb_est_array, lb_array_z, norm_array = parameter_sweep(opt_flow, p_true, n_test, linear_ms, m,
-        #                                                              model, norm_max=norm_max)
-        # else:
-        #     mcrb_est_array, lb_array_z, norm_array = parameter_sweep(opt_flow, p_true, n_test, linear_ms, m,
-        #                                                              model, norm_max=norm_max)
-        gmcrb_est_array, mcrb_est_array, lb_array_z, norm_array = parameter_sweep(cnf, p_true, n_test, linear_ms, m,
-                                                                                  model,
-                                                                                  norm_max=norm_max, run_optimal=True)
+        m_true = int(config.dataset_size / 20)
+        res_mc = []
+        res_mc_gmlb = []
+        for i in range(100):
+            _, mcrb_est_array, _, _ = parameter_sweep(cnf, p_true, n_test, linear_ms, m_true,
+                                                      model,
+                                                      norm_max=norm_max,
+                                                      run_optimal=True, run_lb=False, run_model=False)
+            res_mc.append(mcrb_est_array)
+
+            gmcrb_est_array, _, lb_array_z, norm_array = parameter_sweep(cnf, p_true, n_test, linear_ms, m,
+                                                                         model,
+                                                                         norm_max=norm_max,
+                                                                         run_optimal=False)
+            res_mc_gmlb.append(gmcrb_est_array)
+        diag_array = torch.diagonal(torch.stack(res_mc), dim1=2, dim2=3).sum(dim=-1) / d_p
+        diag_gmlb_array = torch.diagonal(torch.stack(res_mc_gmlb), dim1=2, dim2=3).sum(dim=-1) / d_p
+
         min_limit = config.min_limit
         model_name = f"LTG-" + r"$a=$" + f"{min_limit}"
         if 'ModelName.LinearGaussian' == config.model_name:
-            model_name = "LG"
+            model_name = ""
+        plt.semilogy(norm_array.reshape([1, -1]).repeat([100, 1]).numpy().flatten(), diag_array.flatten(), "o",
+                     label=r"$\overline{LB}$", color="red")
+
+        plt.semilogy(norm_array.reshape([1, -1]).repeat([100, 1]).numpy().flatten(), diag_gmlb_array.flatten(), "x",
+                     label=r"$GMLB$", color="green")
         plt.semilogy(norm_array.detach().numpy(),
-                 (torch.diagonal(lb_array_z, dim1=1, dim2=2).sum(dim=-1) / d_p).detach().numpy(),
-                 label=f"LB-{model_name}")
-        plt.semilogy(norm_array.detach().numpy(),
-                 (torch.diagonal(mcrb_est_array, dim1=1, dim2=2).sum(dim=-1) / d_p).detach().numpy(), "o",
-                 label=f"GMLB (Optimal)-{model_name}")
-        plt.semilogy(norm_array.detach().numpy(),
-                 (torch.diagonal(gmcrb_est_array, dim1=1, dim2=2).sum(dim=-1) / d_p).detach().numpy(), "x",
-                 label=f"GMLB (Trained)-{model_name}")
+                     (torch.diagonal(lb_array_z, dim1=1, dim2=2).sum(dim=-1) / d_p).detach().numpy(),
+                     label=f"LB", color="blue")
 
     # for scale in alpha_array:
     #     p_true_iter[constants.THETA] = p_true[constants.THETA] * scale / torch.norm(p_true[constants.THETA])
@@ -117,11 +124,11 @@ if __name__ == '__main__':
     plt.tight_layout()
     plt.savefig("compare.svg")
     plt.show()
-
+    n_test = 100
     results_p_size = {}
     for p in DATASET_SIZE2RUNNAME.keys():
-        if p == 4:
-            continue
+        # if p == 4:
+        #     continue
         mean_re_list = []
         gmean_re_list = []
         std_re_list = []
@@ -149,7 +156,7 @@ if __name__ == '__main__':
             _, _, cnf = load_run_data(run_name)
             mcrb_mc_list = []
             gmcrb_mc_list = []
-            for _ in tqdm(range(20)):
+            for _ in tqdm(range(1)):
                 mcrb_est_array, _, lb_array_z, _ = parameter_sweep(opt_flow, p_true, n_test, linear_ms,
                                                                    samples_per_point,
                                                                    model, norm_max=norm_max)
@@ -169,13 +176,14 @@ if __name__ == '__main__':
             gstd_re_list.append(torch.std(gre).item())
         results_p_size.update({p: [mean_re_list, gmean_re_list, std_re_list, gstd_re_list]})
     fig, ax1 = plt.subplots(1, 1)
+    ax1.set_xscale("log")
+    ax1.set_yscale("log")
     for p, r in results_p_size.items():
         if p != 4:
             ax1.errorbar(list(DATASET_SIZE2RUNNAME[p].keys()), r[0], fmt="--",
                          label=r"$\overline{\mathrm{LB}}$ $d_p$=" + f"{p}", yerr=r[2])
             ax1.errorbar(list(DATASET_SIZE2RUNNAME[p].keys()), r[1], label=r"$\mathrm{GMLB}$ $d_p$=" + f"{p}",
                          yerr=r[3])
-    ax1.set_xscale("log")
 
     plt.legend()
     plt.xlabel("Dataset-size")

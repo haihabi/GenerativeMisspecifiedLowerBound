@@ -87,13 +87,20 @@ def validation_run(in_ma, in_validation_loader, in_cnf):
 
 
 def override_linear_parameters(in_datamodel, model_folder):
+    file_list = os.listdir(os.path.join(model_folder, "models"))
+    model_file = f"LinearModel_{in_datamodel.d_x}_{in_datamodel.d_p}_model.pt"
     if isinstance(in_datamodel, measurements_distributions.TruncatedLinearModel):
-        file_list = os.listdir(os.path.join(model_folder, "models"))
-        model_file = f"LinearModel_{in_datamodel.d_x}_{in_datamodel.d_p}_model.pt"
         if model_file in file_list:
             data = torch.load(os.path.join(os.path.join(model_folder, "models"), model_file), map_location="cpu")
             in_datamodel.h = data["h"]
             in_datamodel.c_xx_bar = data["c_xx"]
+        else:
+            pru.logger.critical("Can\'t find matching Linear Matrix")
+    if isinstance(in_datamodel, measurements_distributions.NonLinearGaussian):
+        if model_file in file_list:
+            data = torch.load(os.path.join(os.path.join(model_folder, "models"), model_file), map_location="cpu")
+            in_datamodel.optimal_flow.h.data = data["h"]
+            in_datamodel.optimal_flow.c_xx.data = data["c_xx"]
         else:
             pru.logger.critical("Can\'t find matching Linear Matrix")
 

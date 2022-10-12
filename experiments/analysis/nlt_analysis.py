@@ -13,7 +13,7 @@ if __name__ == '__main__':
     n_test = 20
     m = 64000
     alpha = beta = 0.1
-    b = 5.0
+    b = 5
     a = -b
 
     model = TruncatedLinearModel(d_x, d_p, 0.1, 10, a_limit=a, b_limit=b)

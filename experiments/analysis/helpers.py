@@ -30,7 +30,7 @@ def compute_mean_covarinace_truncated_norm(in_model, in_mu_overline):
 
 
 def parameter_sweep(in_flow, in_p_true, in_n_test_points, in_linear_ms, in_samples_per_point, in_model,
-                    norm_min=0.1, norm_max=10, non_linear=False, run_optimal=False, run_model=True):
+                    norm_min=0.1, norm_max=10, non_linear=False, run_optimal=False, run_model=True, run_lb=True):
     norm_array = torch.linspace(norm_min, norm_max, in_n_test_points)
     res_list = []
     res_opt_list = []
@@ -40,19 +40,19 @@ def parameter_sweep(in_flow, in_p_true, in_n_test_points, in_linear_ms, in_sampl
     for norm in tqdm(norm_array):
         _p_true[constants.THETA] = in_p_true[constants.THETA] / torch.norm(in_p_true[constants.THETA])
         _p_true[constants.THETA] = _p_true[constants.THETA] * norm
+        if run_lb:
+            mu = torch.matmul(h, _p_true[constants.THETA].flatten())
+            if isinstance(in_model, measurements_distributions.TruncatedLinearModel):
+                mu_overline = mu
+                if non_linear:
+                    mu_overline = soft_clip(mu_overline, torch.min(in_model.a), torch.min(in_model.b))
+                mu_overline = torch.clip(mu_overline, min=torch.min(in_model.a), max=torch.min(in_model.b))
+                mu, c_xx = compute_mean_covarinace_truncated_norm(in_model, mu_overline)
 
-        mu = torch.matmul(h, _p_true[constants.THETA].flatten())
-        if isinstance(in_model, measurements_distributions.TruncatedLinearModel):
-            mu_overline = mu
-            if non_linear:
-                mu_overline = soft_clip(mu_overline, torch.min(in_model.a), torch.min(in_model.b))
-            mu_overline = torch.clip(mu_overline, min=torch.min(in_model.a), max=torch.min(in_model.b))
-            mu, c_xx = compute_mean_covarinace_truncated_norm(in_model, mu_overline)
-
-        _mcrb = in_linear_ms.calculate_mcrb(0, c_xx)
-        _p_zero = in_linear_ms.calculate_pseudo_true_parameter(mu)
-        _lb = gmlb.compute_lower_bound(_mcrb, _p_true[constants.THETA].flatten(), _p_zero)
-        lb_list.append(_lb)
+            _mcrb = in_linear_ms.calculate_mcrb(0, c_xx)
+            _p_zero = in_linear_ms.calculate_pseudo_true_parameter(mu)
+            _lb = gmlb.compute_lower_bound(_mcrb, _p_true[constants.THETA].flatten(), _p_zero)
+            lb_list.append(_lb)
         if run_model:
             _, _gmlb_v, _ = gmlb.generative_misspecified_cramer_rao_bound_flow(in_flow,
                                                                                in_samples_per_point,
@@ -71,9 +71,8 @@ def parameter_sweep(in_flow, in_p_true, in_n_test_points, in_linear_ms, in_sampl
             res_opt_list.append(_gmlb_v_optimal)
 
     if len(res_list) > 0: res_list = torch.stack(res_list)
-    if len(res_opt_list) > 0:
-        res_opt_list = torch.stack(res_opt_list)
-    lb_list = torch.stack(lb_list)
+    if len(res_opt_list) > 0: res_opt_list = torch.stack(res_opt_list)
+    if len(lb_list) > 0: lb_list = torch.stack(lb_list)
 
     return res_list, res_opt_list, lb_list, norm_array
 
