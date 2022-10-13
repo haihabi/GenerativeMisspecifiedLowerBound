@@ -27,8 +27,8 @@ class NonLinearOptimalFlow(nfp.ConditionalBaseFlowLayer):
     def forward(self, x, **kwargs):
         cond = kwargs[constants.THETA]
         mu = torch.matmul(self.h, cond.transpose(dim0=0, dim1=1))
-        mu = soft_clip(mu, torch.min(self.a), torch.max(self.b))
-        mu = torch.clip(mu, min=torch.min(self.a), max=torch.max(self.b))
+        mu = soft_clip(mu, torch.min(self.a_limit), torch.max(self.b_limit))
+        mu = torch.clip(mu, min=torch.min(self.a_limit), max=torch.max(self.b_limit))
         z = torch.matmul(self.l_matrix_inv,
                          x.transpose(dim0=0, dim1=1) - mu).transpose(
             dim0=0, dim1=1)
@@ -37,8 +37,8 @@ class NonLinearOptimalFlow(nfp.ConditionalBaseFlowLayer):
     def backward(self, z, **kwargs):
         cond = kwargs[constants.THETA]
         mu = torch.matmul(self.h, cond.transpose(dim0=0, dim1=1))
-        mu = soft_clip(mu, torch.min(self.a), torch.max(self.b))
-        mu = torch.clip(mu, min=torch.min(self.a), max=torch.max(self.b))
+        mu = soft_clip(mu, torch.min(self.a_limit), torch.max(self.b_limit))
+        mu = torch.clip(mu, min=torch.min(self.a_limit), max=torch.max(self.b_limit))
         x = torch.matmul(self.l_matrix, z.transpose(dim0=0, dim1=1)) + mu
         x = x.transpose(dim0=0, dim1=1)
         return x, self.l_log_det

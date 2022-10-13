@@ -101,6 +101,7 @@ def override_linear_parameters(in_datamodel, model_folder):
             data = torch.load(os.path.join(os.path.join(model_folder, "models"), model_file), map_location="cpu")
             in_datamodel.optimal_flow.h.data = data["h"]
             in_datamodel.optimal_flow.c_xx.data = data["c_xx"]
+            in_datamodel.optimal_flow.build_sub_parameters()
         else:
             pru.logger.critical("Can\'t find matching Linear Matrix")
 
