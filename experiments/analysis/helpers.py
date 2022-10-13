@@ -49,6 +49,9 @@ def parameter_sweep(in_flow, in_p_true, in_n_test_points, in_linear_ms, in_sampl
                 mu_overline = torch.clip(mu_overline, min=torch.min(in_model.a), max=torch.min(in_model.b))
                 mu, c_xx = compute_mean_covarinace_truncated_norm(in_model, mu_overline)
 
+            if isinstance(in_model, measurements_distributions.NonLinearGaussian):
+                mu = soft_clip(mu, torch.min(torch.ones(1)*in_model.a_limit), torch.min(torch.ones(1)*in_model.b_limit))
+
             _mcrb = in_linear_ms.calculate_mcrb(0, c_xx)
             _p_zero = in_linear_ms.calculate_pseudo_true_parameter(mu)
             _lb = gmlb.compute_lower_bound(_mcrb, _p_true[constants.THETA].flatten(), _p_zero)
