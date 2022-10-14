@@ -113,6 +113,8 @@ def load_run_data(in_run_name):
             download_file(run, FLOW_BEST)
             if run.config.get("non_linear_function") is None:
                 run.config["non_linear_function"] = False
+            if run.config.get("affine_inject") is None:
+                run.config["affine_inject"] = True
             run_parameters = Namespace(**run.config)
 
             model_name = measurements_distributions.ModelName[run.config['model_name'].split(".")[-1]]
@@ -132,7 +134,9 @@ def load_run_data(in_run_name):
                                                   n_layer_inject=run_parameters.n_layer_inject,
                                                   n_hidden_inject=run_parameters.n_hidden_inject,
                                                   inject_scale=run_parameters.inject_scale,
-                                                  inject_bias=run_parameters.inject_bias
+                                                  inject_bias=run_parameters.inject_bias,
+                                                  affine_inject=run_parameters.affine_inject
+
                                                   )
             data = torch.load(FLOW_BEST, map_location="cpu")
             _cnf.load_state_dict(data)

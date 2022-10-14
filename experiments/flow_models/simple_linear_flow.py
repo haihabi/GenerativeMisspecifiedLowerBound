@@ -4,7 +4,8 @@ from torch import nn
 
 
 def build_simple_linear_flow(in_prior, in_d_x, in_d_p, in_cond_name_list, n_blocks=1,
-                             n_layer_inject=1, n_hidden_inject=-1, inject_scale=False, inject_bias=False):
+                             n_layer_inject=1, n_hidden_inject=-1, inject_scale=False, inject_bias=False,
+                             affine_inject=True):
     pru.logger.info(f"Run CNF with parameter:{locals()}")
     input_vector_shape = [in_d_x]
     flows = []
@@ -24,7 +25,7 @@ def build_simple_linear_flow(in_prior, in_d_x, in_d_p, in_cond_name_list, n_bloc
                                                                                 non_linear_function=nn.SiLU,
                                                                                 bias=inject_bias),
                                      scale=inject_scale))
-        if True:
+        if affine_inject:
             flows.append(nfp.flows.AffineCoupling(x_shape=input_vector_shape,
                                                   parity=b % 2,
                                                   net_class=nfp.base_nets.generate_mlp_class(n_layer=n_layer_inject,
