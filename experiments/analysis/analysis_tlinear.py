@@ -7,22 +7,34 @@ from experiments.analysis.helpers import load_run_data, create_model_delta, get_
 
 from tqdm import tqdm
 
+RUNS_DICT = {3: {200: "jumping-music-248",
+                 2000: "comic-firefly-242",
+                 20000: "jolly-serenity-241",
+                 200000: "effortless-glade-240"},
+             4: {200: "polished-aardvark-238",
+                 2000: "gentle-pine-236",
+                 20000: "gallant-sky-235",
+                 200000: "fluent-silence-234"},
+             5: {200: "treasured-sun-230",
+                 2000: "fresh-lake-229",
+                 20000: "jolly-field-228",
+                 200000: "dazzling-energy-220"}}
+
 if __name__ == '__main__':
     pru.set_seed(0)
-    run_name = "dazzling-energy-220"
+    # run_name = "dazzling-energy-220"
     alpha = 0.1
     beta = 0.1
     n_test = 20
-
     generate_delta = True
     run_interpolation_plot = True
     norm_max = 9
-    mc_n = 100
     m = 640000
     # "dazzling-energy-220", "fluent-silence-234","effortless-glade-240"
     # "warm-glade-253", "effortless-glade-240"
     if run_interpolation_plot:
-        for run_name in ["comic-morning-261"]:
+        mc_n = 1
+        for run_name in ["youthful-spaceship-271", "faithful-bush-272", "bumbling-morning-273", "fluent-elevator-274"]:
             model, run_parameters, cnf = load_run_data(run_name)
             m_true = int(run_parameters.dataset_size / 20)
             if generate_delta:
@@ -63,7 +75,7 @@ if __name__ == '__main__':
                          label=r"$\overline{LB}$")
             plt.semilogy(norm_array.reshape([1, -1]).repeat([mc_n, 1]).numpy().flatten(), diag_gmlb_array.flatten(),
                          "x",
-                         label=r"$GMLB$")
+                         label=r"$GMLB$" + run_name)
             plt.semilogy(norm_array.detach().numpy(),
                          (torch.diagonal(lb_final, dim1=1, dim2=2).sum(dim=-1) / run_parameters.d_p).detach().numpy(),
                          label=f"LB-a={run_parameters.min_limit}")
@@ -77,8 +89,7 @@ if __name__ == '__main__':
     n_test = 100
     results = []
     dataset_size = []
-    for run_name in ["treasured-sun-230", "fresh-lake-229", "jolly-field-228",
-                     "dazzling-energy-220"]:  # ["treasured-surf-177", "blooming-dawn-187", "smooth-fire-188"]:
+    for run_name in RUNS_DICT[5].values():  # ["treasured-surf-177", "blooming-dawn-187", "smooth-fire-188"]:
         model, run_parameters, cnf = load_run_data(run_name)
         samples_per_point = int(run_parameters.dataset_size / n_test)
         dataset_size.append(run_parameters.dataset_size)
@@ -122,4 +133,22 @@ if __name__ == '__main__':
     plt.grid()
     plt.tight_layout()
     plt.savefig("dataset-size-effect-nl.svg")
+    plt.show()
+
+    fig, ax1 = plt.subplots(1, 1)
+    ax1.set_xscale("log")
+    ax1.set_yscale("log")
+    for p, r in results_p_size.items():
+        if p != 4:
+            ax1.errorbar(list(DATASET_SIZE2RUNNAME[p].keys()), r[0], fmt="--",
+                         label=r"$\overline{\mathrm{LB}}$ $d_p$=" + f"{p}", yerr=r[2])
+            ax1.errorbar(list(DATASET_SIZE2RUNNAME[p].keys()), r[1], label=r"$\mathrm{GMLB}$ $d_p$=" + f"{p}",
+                         yerr=r[3])
+
+    plt.legend()
+    plt.xlabel("Dataset-size")
+    plt.ylabel("xRE")
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig("dataset-size-effect.svg")
     plt.show()
