@@ -50,7 +50,8 @@ def parameter_sweep(in_flow, in_p_true, in_n_test_points, in_linear_ms, in_sampl
                 mu, c_xx = compute_mean_covarinace_truncated_norm(in_model, mu_overline)
 
             if isinstance(in_model, measurements_distributions.NonLinearGaussian):
-                mu = soft_clip(mu, torch.min(torch.ones(1)*in_model.a_limit), torch.min(torch.ones(1)*in_model.b_limit))
+                mu = soft_clip(mu, torch.min(torch.ones(1) * in_model.a_limit),
+                               torch.min(torch.ones(1) * in_model.b_limit))
 
             _mcrb = in_linear_ms.calculate_mcrb(0, c_xx)
             _p_zero = in_linear_ms.calculate_pseudo_true_parameter(mu)
@@ -110,6 +111,8 @@ def load_run_data(in_run_name):
             download_file(run, FLOW_BEST)
             if run.config.get("non_linear_function") is None:
                 run.config["non_linear_function"] = False
+            if run.config.get("affine_inject") is None:
+                run.config["affine_inject"] = True
             run_parameters = Namespace(**run.config)
 
             model_name = measurements_distributions.ModelName[run.config['model_name'].split(".")[-1]]
@@ -129,7 +132,9 @@ def load_run_data(in_run_name):
                                                   n_layer_inject=run_parameters.n_layer_inject,
                                                   n_hidden_inject=run_parameters.n_hidden_inject,
                                                   inject_scale=run_parameters.inject_scale,
-                                                  inject_bias=run_parameters.inject_bias
+                                                  inject_bias=run_parameters.inject_bias,
+                                                  affine_inject=run_parameters.affine_inject
+
                                                   )
             data = torch.load(FLOW_BEST, map_location="cpu")
             _cnf.load_state_dict(data)

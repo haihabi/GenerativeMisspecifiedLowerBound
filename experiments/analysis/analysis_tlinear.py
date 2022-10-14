@@ -34,7 +34,7 @@ if __name__ == '__main__':
     # "warm-glade-253", "effortless-glade-240"
     if run_interpolation_plot:
         mc_n = 1
-        for run_name in ["bumbling-morning-273", "fluent-elevator-274"]:
+        for run_name in ["fluent-elevator-274"]:
             model, run_parameters, cnf = load_run_data(run_name)
             m_true = int(run_parameters.dataset_size / 20)
             if generate_delta:
