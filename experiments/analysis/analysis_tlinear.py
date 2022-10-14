@@ -34,7 +34,7 @@ if __name__ == '__main__':
     # "warm-glade-253", "effortless-glade-240"
     if run_interpolation_plot:
         mc_n = 1
-        for run_name in ["youthful-spaceship-271", "faithful-bush-272", "bumbling-morning-273", "fluent-elevator-274"]:
+        for run_name in ["bumbling-morning-273", "fluent-elevator-274"]:
             model, run_parameters, cnf = load_run_data(run_name)
             m_true = int(run_parameters.dataset_size / 20)
             if generate_delta:
@@ -152,3 +152,48 @@ if __name__ == '__main__':
     plt.tight_layout()
     plt.savefig("dataset-size-effect.svg")
     plt.show()
+    # print("---")
+    # print(h_delta)
+
+    # mc = pru.MetricCollector()
+    # p_true_iter = copy.copy(p_true)
+    # for scale in alpha_array:
+    #     p_true_iter[constants.THETA] = p_true[constants.THETA] * scale / torch.norm(p_true[constants.THETA])
+    #
+    #     # mu_overline = soft_clip(torch.matmul(p_true_iter[constants.THETA], h.T), torch.min(model.a),
+    #     #                         torch.max(model.b))
+    #     mu_overline = torch.matmul(p_true_iter[constants.THETA], h.T)
+    #
+    #     mu, c_xx = compute_mean_covarinace(model, mu_overline)
+    #
+    #     mcrb = linear_ms.calculate_mcrb(0, c_xx)
+    #     p_zero = linear_ms.calculate_pseudo_true_parameter(mu.flatten())
+    #     lb = gmlb.compute_lower_bound(mcrb, p_true_iter[constants.THETA].flatten(), p_zero)
+    #
+    #     gmcrb, gmlb_v, p_zero_est = gmlb.generative_misspecified_cramer_rao_bound(model.generate_data, 256000,
+    #                                                                               linear_ms,
+    #                                                                               **p_true_iter)
+    #     gmcrb_cnf, gmlb_cnf_v, _ = gmlb.generative_misspecified_cramer_rao_bound_flow(cnf, 256000,
+    #                                                                                   linear_ms,
+    #                                                                                   min_limit=model.a,
+    #                                                                                   max_limit=model.b,
+    #                                                                                   **p_true_iter)
+    #
+    #     mc.insert(
+    #         lb=torch.trace(lb).item() / run_parameters.d_p,
+    #         crb=torch.trace(linear_ms.crb()) / run_parameters.d_p,
+    #         mcrb=torch.trace(mcrb).item() / run_parameters.d_p,
+    #         gmcrb=torch.trace(gmcrb).item() / run_parameters.d_p,
+    #         gmcrb_cnf=torch.trace(gmcrb_cnf).item() / run_parameters.d_p,
+    #         gmlb_cnf=torch.trace(gmlb_cnf_v).item() / run_parameters.d_p,
+    #         gmlb=torch.trace(gmlb_v).item() / run_parameters.d_p)
+#
+#     plt.plot(alpha_array, np.asarray(mc["gmlb"]), "o", label=f"GMLB (Optimal) $a=$" + f"{run_parameters.min_limit}")
+#     plt.plot(alpha_array, np.asarray(mc["gmlb_cnf"]), "x",
+#              label=f"GMLB (Trained) $a=$" + f"{run_parameters.min_limit}")
+#     plt.plot(alpha_array, np.asarray(mc["lb"]), "--", label=f"LB $a=$" + f"{run_parameters.min_limit}")
+# plt.grid()
+# plt.legend()
+# plt.tight_layout()
+# plt.savefig("trunced_res.svg")
+# plt.show()

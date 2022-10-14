@@ -31,6 +31,7 @@ def config() -> pru.ConfigReader:
     _cr.add_parameter("n_hidden_inject", type=int, default=16)
     _cr.add_parameter("inject_scale", type=str, default="false")
     _cr.add_parameter("inject_bias", type=str, default="false")
+    _cr.add_parameter("affine_inject", type=str, default="false")
     ###############################################
     # Signal Model Parameter
     ###############################################
@@ -134,6 +135,7 @@ def run_main(in_run_parameters):
                                          n_layer_inject=in_run_parameters.n_layer_inject,
                                          n_hidden_inject=in_run_parameters.n_hidden_inject,
                                          inject_scale=in_run_parameters.inject_scale,
+                                         affine_inject=in_run_parameters.affine_inject,
                                          inject_bias=in_run_parameters.inject_bias)
     m_step = len(train_loader)
     opt = torch.optim.Adam(cnf.parameters(), lr=in_run_parameters.lr, weight_decay=in_run_parameters.weight_decay)
