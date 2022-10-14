@@ -17,7 +17,6 @@ class LinearMCRB(gmlb.BaseMisSpecifiedModel):
         b = torch.matmul(torch.matmul(torch.matmul(self.h.T, self.c_vv_inv), c_vv), torch.matmul(self.c_vv_inv, self.h))
         return torch.matmul(torch.matmul(a_inv, b), a_inv)
 
-    # TODO: change to mu
     def calculate_pseudo_true_parameter(self, in_mu):
         u = torch.matmul(self.h.T, torch.matmul(self.c_vv_inv, in_mu))
         return torch.matmul(self.crb(), u)

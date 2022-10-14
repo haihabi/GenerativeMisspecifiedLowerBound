@@ -55,10 +55,10 @@ class TruncatedLinearModel(BaseModel):
 
     def load_data_model(self, folder):
         data = torch.load(os.path.join(folder, self.file_name), map_location="cpu")
-        self.h = data["h"]
-        self.c_xx_bar = data["c_xx_bar"]
-        self.a = data["a"]
-        self.b = data["b"]
+        self.h = data["h"].to(pru.get_working_device())
+        self.c_xx_bar = data["c_xx_bar"].to(pru.get_working_device())
+        self.a = data["a"].to(pru.get_working_device())
+        self.b = data["b"].to(pru.get_working_device())
         self.non_linear_function = data["non_linear_function"]
 
     def generate_data(self, n_samples, **kwargs):

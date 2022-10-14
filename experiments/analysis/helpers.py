@@ -8,7 +8,7 @@ from experiments import flow_models
 from argparse import Namespace
 import gmlb
 import copy
-
+import pyresearchutils as pru
 from experiments.measurements_distributions.linear_truncated_gaussian.computing_moments import \
     compute_second_order_state
 from experiments.measurements_distributions.linear_truncated_gaussian.softclip import soft_clip
@@ -48,9 +48,12 @@ def parameter_sweep(in_flow, in_p_true, in_n_test_points, in_linear_ms, in_sampl
                     mu_overline = soft_clip(mu_overline, torch.min(in_model.a), torch.min(in_model.b))
                 mu_overline = torch.clip(mu_overline, min=torch.min(in_model.a), max=torch.min(in_model.b))
                 mu, c_xx = compute_mean_covarinace_truncated_norm(in_model, mu_overline)
+                mu = mu.to(pru.get_working_device())
+                c_xx = c_xx.to(pru.get_working_device())
 
             if isinstance(in_model, measurements_distributions.NonLinearGaussian):
-                mu = soft_clip(mu, torch.min(torch.ones(1)*in_model.a_limit), torch.min(torch.ones(1)*in_model.b_limit))
+                mu = soft_clip(mu, torch.min(torch.ones(1) * in_model.a_limit),
+                               torch.min(torch.ones(1) * in_model.b_limit))
 
             _mcrb = in_linear_ms.calculate_mcrb(0, c_xx)
             _p_zero = in_linear_ms.calculate_pseudo_true_parameter(mu)
@@ -81,8 +84,8 @@ def parameter_sweep(in_flow, in_p_true, in_n_test_points, in_linear_ms, in_sampl
 
 
 def create_model_delta(in_d_x, in_d_p, scale=0.1):
-    _h_delta = torch.randn(in_d_x, in_d_p) * scale
-    c_vv_delta = torch.randn(in_d_x, in_d_x) * scale
+    _h_delta = torch.randn(in_d_x, in_d_p, device=pru.get_working_device()) * scale
+    c_vv_delta = torch.randn(in_d_x, in_d_x, device=pru.get_working_device()) * scale
     c_vv_delta = torch.matmul(c_vv_delta, c_vv_delta.T)
     _l_delta = torch.linalg.cholesky(c_vv_delta)
     return _h_delta, _l_delta
@@ -135,4 +138,4 @@ def load_run_data(in_run_name):
             _cnf.load_state_dict(data)
             download_file(run, _model.file_name)
             _model.load_data_model("./")
-            return _model, run_parameters, _cnf
+            return _model, run_parameters, _cnf.to(pru.get_working_device())

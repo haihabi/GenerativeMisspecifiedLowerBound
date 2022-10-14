@@ -17,12 +17,12 @@ if __name__ == '__main__':
     generate_delta = True
     run_interpolation_plot = True
     norm_max = 9
-    mc_n = 100
+    mc_n = 1
     m = 640000
     # "dazzling-energy-220", "fluent-silence-234","effortless-glade-240"
     # "warm-glade-253", "effortless-glade-240"
     if run_interpolation_plot:
-        for run_name in ["comic-morning-261"]:
+        for run_name in ["breezy-snowflake-266"]:
             model, run_parameters, cnf = load_run_data(run_name)
             m_true = int(run_parameters.dataset_size / 20)
             if generate_delta:
@@ -59,13 +59,16 @@ if __name__ == '__main__':
             diag_array = torch.diagonal(torch.stack(mc_mcrb), dim1=2, dim2=3).sum(dim=-1) / run_parameters.d_p
             diag_gmlb_array = torch.diagonal(torch.stack(mc_gmcrb), dim1=2, dim2=3).sum(dim=-1) / run_parameters.d_p
 
-            plt.semilogy(norm_array.reshape([1, -1]).repeat([mc_n, 1]).numpy().flatten(), diag_array.flatten(), "o",
+            plt.semilogy(pru.torch2numpy(norm_array.reshape([1, -1]).repeat([mc_n, 1])).flatten(),
+                         pru.torch2numpy(diag_array).flatten(),
+                         "o",
                          label=r"$\overline{LB}$")
-            plt.semilogy(norm_array.reshape([1, -1]).repeat([mc_n, 1]).numpy().flatten(), diag_gmlb_array.flatten(),
+            plt.semilogy(pru.torch2numpy(norm_array.reshape([1, -1]).repeat([mc_n, 1])).flatten(),
+                         pru.torch2numpy(diag_gmlb_array).flatten(),
                          "x",
                          label=r"$GMLB$")
-            plt.semilogy(norm_array.detach().numpy(),
-                         (torch.diagonal(lb_final, dim1=1, dim2=2).sum(dim=-1) / run_parameters.d_p).detach().numpy(),
+            plt.semilogy(pru.torch2numpy(norm_array.detach()),
+                         pru.torch2numpy((torch.diagonal(lb_final, dim1=1, dim2=2).sum(dim=-1) / run_parameters.d_p)),
                          label=f"LB-a={run_parameters.min_limit}")
         plt.grid()
         plt.legend()

@@ -30,11 +30,3 @@ def pdf_truncted_normal(in_x, in_a, in_b, in_mu, in_sigma):
     z, _, _, _ = compute_truncted_normal_parameters(in_a, in_b, in_mu, in_sigma)
     eps = (in_x - in_mu) / in_sigma
     return pdf(eps) / (z * in_sigma)
-
-
-def sample_truncated_normal(in_shape, in_a, in_b, in_mu, in_sigma):
-    z, _, _, alpha_cdf = compute_truncted_normal_parameters(in_a, in_b, in_mu, in_sigma)
-    u = torch.rand(*in_shape, device=pru.get_working_device())
-    x = inv_cdf((alpha_cdf + u * z).double()).float() * in_sigma + in_mu
-    x[:, z.flatten() == 0] = in_a[z.flatten() == 0]
-    return x

@@ -11,12 +11,6 @@ from experiments.analysis.helpers import build_misspecifietion_type_one, load_ru
     parameter_sweep, get_h_and_c_xx
 from tqdm import tqdm
 
-# def get_h_and_c_xx(in_opt_flow):
-#     _h = in_opt_flow.flow.flows[0].h
-#     _c_xx = in_opt_flow.flow.flows[0].c_xx
-#     return _h, _c_xx
-
-
 MAX_DATASET_SIZE = 200000
 DATASET_SIZE2RUNNAME = {2: {200: "earthy-field-105",
                             2000: "prime-fog-103",
