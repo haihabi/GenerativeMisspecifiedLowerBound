@@ -104,7 +104,7 @@ def build_misspecifietion_type_one(in_h, in_l_xx, in_h_delta, in_l_vv_delta, in_
     return LinearMCRB(h_matrix, c_ww_matrix)
 
 
-def load_run_data(in_run_name):
+def load_run_data(in_run_name, affine_inject_base=False):
     api = wandb.Api()
     runs = api.runs(f"HVH/{constants.PROJECT}")
     for run in runs:
@@ -114,7 +114,7 @@ def load_run_data(in_run_name):
             if run.config.get("non_linear_function") is None:
                 run.config["non_linear_function"] = False
             if run.config.get("affine_inject") is None:
-                run.config["affine_inject"] = True
+                run.config["affine_inject"] = affine_inject_base
             run_parameters = Namespace(**run.config)
 
             model_name = measurements_distributions.ModelName[run.config['model_name'].split(".")[-1]]
