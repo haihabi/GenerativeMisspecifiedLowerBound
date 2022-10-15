@@ -87,7 +87,7 @@ if __name__ == '__main__':
     import pickle
 
     # pickle.dumps(results_dict,"data.pickle")
-    with open('data.pickle', 'wb') as handle:
+    with open('../data/data.pickle', 'wb') as handle:
         pickle.dump(results_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
     # fig, ax1 = plt.subplots(1, 1)
     # ax1.set_xscale("log")
