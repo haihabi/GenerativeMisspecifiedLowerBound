@@ -13,6 +13,7 @@ from experiments.measurements_distributions.linear_truncated_gaussian.computing_
     compute_second_order_state
 from experiments.measurements_distributions.linear_truncated_gaussian.softclip import soft_clip
 from tqdm import tqdm
+import numpy as np
 
 FLOW_BEST = "flow_best.pt"
 
@@ -84,10 +85,10 @@ def parameter_sweep(in_flow, in_p_true, in_n_test_points, in_linear_ms, in_sampl
 
 
 def create_model_delta(in_d_x, in_d_p, scale=0.1):
-    _h_delta = torch.randn(in_d_x, in_d_p, device=pru.get_working_device()) * scale
-    c_vv_delta = torch.randn(in_d_x, in_d_x, device=pru.get_working_device()) * scale
-    c_vv_delta = torch.matmul(c_vv_delta, c_vv_delta.T)
-    _l_delta = torch.linalg.cholesky(c_vv_delta)
+    _h_delta = torch.randn(in_d_x, in_d_p, device=pru.get_working_device()) * np.sqrt(scale)
+    _l_delta = torch.randn(in_d_x, in_d_x, device=pru.get_working_device()) * np.sqrt(scale)
+    # c_vv_delta = torch.matmul(c_vv_delta, c_vv_delta.T)
+    # _l_delta = torch.linalg.cholesky(c_vv_delta)
     return _h_delta, _l_delta
 
 

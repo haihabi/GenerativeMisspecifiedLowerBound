@@ -29,9 +29,10 @@ DATASET_SIZE2RUNNAME = {2: {200: "earthy-field-105",
 if __name__ == '__main__':
     pru.set_seed(0)
     run_name = "charmed-resonance-122"
-    alpha = 0.1
-    beta = 0.1
+    alpha = 1.0
+    beta = 1.0
     m = 64000
+    norm_min = 0.2
     norm_max = 9
     n_test = 20
     model, config, cnf = load_run_data(run_name)
@@ -46,23 +47,18 @@ if __name__ == '__main__':
     d_p = config.d_p
 
     opt_flow = model.get_optimal_model()
+    n_mc = 100
 
-    # mc = pru.MetricCollector()
-
-    # mc.clear()
-
-    # alpha_array = np.linspace(0.1, 10, n_test)
-    # mcrb = linear_ms.calculate_mcrb(h, c_xx)
-    # "charmed-resonance-122", "honest-lion-174","soft-dawn-175"
     plt.figure(figsize=(8, 6), dpi=80)
-    for run in ["charmed-resonance-122"]:
+    for run in ["fragrant-sun-127"]:
         model, config, cnf = load_run_data(run)
-        m_true = int(config.dataset_size / 20)
+        m_true = int(config.dataset_size / n_test)
         res_mc = []
         res_mc_gmlb = []
-        for i in range(100):
+        for i in range(n_mc):
             _, mcrb_est_array, _, _ = parameter_sweep(cnf, p_true, n_test, linear_ms, m_true,
                                                       model,
+                                                      norm_min=norm_min,
                                                       norm_max=norm_max,
                                                       run_optimal=True, run_lb=False, run_model=False)
             res_mc.append(mcrb_est_array)
@@ -76,41 +72,18 @@ if __name__ == '__main__':
         diag_gmlb_array = torch.diagonal(torch.stack(res_mc_gmlb), dim1=2, dim2=3).sum(dim=-1) / d_p
 
         min_limit = config.min_limit
-        model_name = f"LTG-" + r"$a=$" + f"{min_limit}"
-        if 'ModelName.LinearGaussian' == config.model_name:
-            model_name = ""
-        plt.semilogy(norm_array.reshape([1, -1]).repeat([100, 1]).numpy().flatten(), diag_array.flatten(), "o",
+        # model_name = f"LTG-" + r"$a=$" + f"{min_limit}"
+        # if 'ModelName.LinearGaussian' == config.model_name:
+        model_name = ""
+        plt.semilogy(norm_array.reshape([1, -1]).repeat([n_mc, 1]).numpy().flatten(), diag_array.flatten(), "o",
                      label=r"$\overline{LB}$", color="red")
 
-        plt.semilogy(norm_array.reshape([1, -1]).repeat([100, 1]).numpy().flatten(), diag_gmlb_array.flatten(), "x",
+        plt.semilogy(norm_array.reshape([1, -1]).repeat([n_mc, 1]).numpy().flatten(), diag_gmlb_array.flatten(), "x",
                      label=r"$GMLB$", color="green")
         plt.semilogy(norm_array.detach().numpy(),
                      (torch.diagonal(lb_array_z, dim1=1, dim2=2).sum(dim=-1) / d_p).detach().numpy(),
                      label=f"LB", color="blue")
 
-    # for scale in alpha_array:
-    #     p_true_iter[constants.THETA] = p_true[constants.THETA] * scale / torch.norm(p_true[constants.THETA])
-    #
-    #     mu = torch.matmul(h, p_true_iter[constants.THETA].flatten())
-    #
-    #     p_zero = linear_ms.calculate_pseudo_true_parameter(mu)
-    #     lb = gmlb.compute_lower_bound(mcrb, p_true_iter[constants.THETA].flatten(), p_zero)
-    #
-    #     gmcrb, gmlb_v, _ = gmlb.generative_misspecified_cramer_rao_bound_flow(opt_flow, m, linear_ms,
-    #                                                                           **p_true_iter)
-    #     gmcrb_cnf, gmlb_cnf, _ = gmlb.generative_misspecified_cramer_rao_bound_flow(cnf, m, linear_ms,
-    #                                                                                 **p_true_iter)
-    #     mc.insert(lb=torch.trace(lb).item() / d_p,
-    #               crb=torch.trace(linear_ms.crb()) / d_p,
-    #               mcrb=torch.trace(mcrb).item() / d_p,
-    #               gmcrb=torch.trace(gmcrb).item() / d_p,
-    #               gmcrb_cnf=torch.trace(gmcrb_cnf).item() / d_p,
-    #               gmlb_cnf=torch.trace(gmlb_cnf).item() / d_p,
-    #               gmlb=torch.trace(gmlb_v).item() / d_p)
-
-    # plt.plot(alpha_array, np.asarray(mc["mcrb"]), label="MCRB")
-    # plt.plot(alpha_array, np.asarray(mc["gmcrb"]), "o", label="GMCRB (Optimal)")
-    # plt.plot(alpha_array, np.asarray(mc["gmcrb_cnf"]), "x", label="GMCRB (Trained)")
     plt.legend()
     plt.grid()
     plt.xlabel(r"$\alpha$")
@@ -118,8 +91,8 @@ if __name__ == '__main__':
     plt.tight_layout()
     plt.savefig("compare.svg")
     plt.show()
-    n_test = 100
     results_p_size = {}
+    n_test = 100
     for p in DATASET_SIZE2RUNNAME.keys():
         # if p == 4:
         #     continue
@@ -150,12 +123,12 @@ if __name__ == '__main__':
             _, _, cnf = load_run_data(run_name)
             mcrb_mc_list = []
             gmcrb_mc_list = []
-            for _ in tqdm(range(1)):
+            for _ in tqdm(range(20)):
                 mcrb_est_array, _, lb_array_z, _ = parameter_sweep(opt_flow, p_true, n_test, linear_ms,
                                                                    samples_per_point,
-                                                                   model, norm_max=norm_max)
+                                                                   model, norm_max=norm_max, norm_min=norm_min)
                 gmcrb_est_array, _, _, _ = parameter_sweep(cnf, p_true, n_test, linear_ms, m, model,
-                                                           norm_max=norm_max)
+                                                           norm_max=norm_max, norm_min=norm_min)
                 mcrb_mc_list.append(mcrb_est_array)
                 gmcrb_mc_list.append(gmcrb_est_array)
             # re = torch.norm(mcrb_est_array - lb_array_z, dim=(1, 2)) / torch.norm(lb_array_z, dim=(1, 2))

@@ -32,10 +32,11 @@ if __name__ == '__main__':
     m = 640000
     # "dazzling-energy-220", "fluent-silence-234","effortless-glade-240"
     # "warm-glade-253", "effortless-glade-240" breezy-snowflake-266
+    #["jolly-serenity-241", "jolly-field-228"]
     if run_interpolation_plot:
         mc_n = 100
         results_dict = {}
-        for run_name in ["effortless-glade-240", "dazzling-energy-220"]:
+        for run_name in ["visionary-cosmos-286","proud-dragon-287"]: #visionary-cosmos-286
             model, run_parameters, cnf = load_run_data(run_name)
             m_true = int(run_parameters.dataset_size / 20)
             if generate_delta:
@@ -76,18 +77,22 @@ if __name__ == '__main__':
                                                             pru.torch2numpy(
                                                                 torch.diagonal(lb_final, dim1=1, dim2=2).sum(
                                                                     dim=-1) / run_parameters.d_p))})
+        import pickle
+
+        with open('../data/data_interpolation_reg.pickle', 'wb') as handle:
+            pickle.dump(results_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
         for max_limit, r in results_dict.items():
             plt.semilogy(pru.torch2numpy(norm_array.reshape([1, -1]).repeat([mc_n, 1])).flatten(),
                          r[0],
                          "o",
-                         label=r"$\overline{LB}$ " f"b=-a={max_limit}")
+                         label=r"$\overline{LB}$ " f"c={max_limit}")
             plt.semilogy(pru.torch2numpy(norm_array.reshape([1, -1]).repeat([mc_n, 1])).flatten(),
                          r[1],
                          "x",
-                         label=r"GMLB " + f"b=-a={max_limit}")
+                         label=r"GMLB " + f"c={max_limit}")
             plt.semilogy(pru.torch2numpy(norm_array.detach()),
                          r[2],
-                         label=f"LB b=-a={max_limit}")
+                         label=f"LB c={max_limit}")
 
         ax = plt.gca()
         axins = ax.inset_axes([0.58, 0.05, 0.4, 0.4])
