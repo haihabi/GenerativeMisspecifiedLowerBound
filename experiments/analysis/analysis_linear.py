@@ -11,7 +11,7 @@ from experiments.analysis.helpers import build_misspecifietion_type_one, load_ru
     parameter_sweep, get_h_and_c_xx
 from tqdm import tqdm
 
-MAX_DATASET_SIZE = 20000
+MAX_DATASET_SIZE = 200000
 DATASET_SIZE2RUNNAME = {2: {200: "earthy-field-105",
                             2000: "prime-fog-103",
                             20000: "dark-thunder-104",
@@ -35,7 +35,7 @@ if __name__ == '__main__':
     norm_min = 0.1
     norm_max = 9
     n_test = 20
-    plot_interpolation = False
+    plot_interpolation = True
     model, config, cnf = load_run_data("charmed-resonance-122")
     h_delta, l_delta = create_model_delta(config.d_x, config.d_p)
     h, c_xx = get_h_and_c_xx(model)
@@ -49,10 +49,10 @@ if __name__ == '__main__':
 
     opt_flow = model.get_optimal_model()
     if plot_interpolation:
-        n_mc = 100
+        n_mc = 1
 
         plt.figure(figsize=(8, 6), dpi=80)
-        for run in ["breezy-leaf-131"]:
+        for run in ["charmed-resonance-122"]:
             model, config, cnf = load_run_data(run)
             m_true = int(config.dataset_size / n_test)
             res_mc = []
