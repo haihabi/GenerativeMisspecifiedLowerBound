@@ -15,27 +15,28 @@ MAX_DATASET_SIZE = 200000
 DATASET_SIZE2RUNNAME = {2: {200: "earthy-field-105",
                             2000: "prime-fog-103",
                             20000: "dark-thunder-104",
-                            200000: "solar-plasma-102"},
+                            200000: "solar-plasma-102"},  # 200000: "solar-plasma-102"
                         4: {200: "earthy-fog-117",
                             2000: "different-terrain-112",
                             20000: "fresh-haze-110",
                             200000: "wise-aardvark-125"},
                         8: {200: "breezy-leaf-131",
                             2000: "northern-universe-129",
-                            20000: "fragrant-sun-127",
-                            200000: "charmed-resonance-122"}
+                            20000: "fragrant-sun-127", 200000: "charmed-resonance-122"}
+                        # 200000: "charmed-resonance-122"
                         }
 
 if __name__ == '__main__':
-    pru.set_seed(0)
-    run_name = "charmed-resonance-122"
-    alpha = 1.0
-    beta = 1.0
-    m = 64000
-    norm_min = 0.2
+    pru.set_seed(1)
+    # run_name = "charmed-resonance-122"
+    alpha = 0.1
+    beta = 0.1
+    m = 256000
+    norm_min = 0.1
     norm_max = 9
     n_test = 20
-    model, config, cnf = load_run_data(run_name)
+    plot_interpolation = True
+    model, config, cnf = load_run_data("charmed-resonance-122")
     h_delta, l_delta = create_model_delta(config.d_x, config.d_p)
     h, c_xx = get_h_and_c_xx(model)
     l_x = torch.linalg.cholesky(c_xx)
@@ -47,55 +48,57 @@ if __name__ == '__main__':
     d_p = config.d_p
 
     opt_flow = model.get_optimal_model()
-    n_mc = 100
+    if plot_interpolation:
+        n_mc = 1
 
-    plt.figure(figsize=(8, 6), dpi=80)
-    for run in ["fragrant-sun-127"]:
-        model, config, cnf = load_run_data(run)
-        m_true = int(config.dataset_size / n_test)
-        res_mc = []
-        res_mc_gmlb = []
-        for i in range(n_mc):
-            _, mcrb_est_array, _, _ = parameter_sweep(cnf, p_true, n_test, linear_ms, m_true,
-                                                      model,
-                                                      norm_min=norm_min,
-                                                      norm_max=norm_max,
-                                                      run_optimal=True, run_lb=False, run_model=False)
-            res_mc.append(mcrb_est_array)
+        plt.figure(figsize=(8, 6), dpi=80)
+        for run in ["charmed-resonance-122"]:
+            model, config, cnf = load_run_data(run)
+            m_true = int(config.dataset_size / n_test)
+            res_mc = []
+            res_mc_gmlb = []
+            for i in range(n_mc):
+                _, mcrb_est_array, _, _ = parameter_sweep(cnf, p_true, n_test, linear_ms, m_true,
+                                                          model,
+                                                          norm_min=norm_min,
+                                                          norm_max=norm_max,
+                                                          run_optimal=True, run_lb=False, run_model=False)
+                res_mc.append(mcrb_est_array)
 
-            gmcrb_est_array, _, lb_array_z, norm_array = parameter_sweep(cnf, p_true, n_test, linear_ms, m,
-                                                                         model,
-                                                                         norm_max=norm_max,
-                                                                         run_optimal=False)
-            res_mc_gmlb.append(gmcrb_est_array)
-        diag_array = torch.diagonal(torch.stack(res_mc), dim1=2, dim2=3).sum(dim=-1) / d_p
-        diag_gmlb_array = torch.diagonal(torch.stack(res_mc_gmlb), dim1=2, dim2=3).sum(dim=-1) / d_p
+                gmcrb_est_array, _, lb_array_z, norm_array = parameter_sweep(cnf, p_true, n_test, linear_ms, m,
+                                                                             model,
+                                                                             norm_max=norm_max,
+                                                                             run_optimal=False)
+                res_mc_gmlb.append(gmcrb_est_array)
+            diag_array = torch.diagonal(torch.stack(res_mc), dim1=2, dim2=3).sum(dim=-1) / d_p
+            diag_gmlb_array = torch.diagonal(torch.stack(res_mc_gmlb), dim1=2, dim2=3).sum(dim=-1) / d_p
 
-        min_limit = config.min_limit
-        # model_name = f"LTG-" + r"$a=$" + f"{min_limit}"
-        # if 'ModelName.LinearGaussian' == config.model_name:
-        model_name = ""
-        plt.semilogy(norm_array.reshape([1, -1]).repeat([n_mc, 1]).numpy().flatten(), diag_array.flatten(), "o",
-                     label=r"$\overline{LB}$", color="red")
+            min_limit = config.min_limit
+            # model_name = f"LTG-" + r"$a=$" + f"{min_limit}"
+            # if 'ModelName.LinearGaussian' == config.model_name:
+            model_name = ""
+            plt.semilogy(norm_array.reshape([1, -1]).repeat([n_mc, 1]).numpy().flatten(), diag_array.flatten(), "o",
+                         label=r"$\overline{LB}$", color="red")
 
-        plt.semilogy(norm_array.reshape([1, -1]).repeat([n_mc, 1]).numpy().flatten(), diag_gmlb_array.flatten(), "x",
-                     label=r"$GMLB$", color="green")
-        plt.semilogy(norm_array.detach().numpy(),
-                     (torch.diagonal(lb_array_z, dim1=1, dim2=2).sum(dim=-1) / d_p).detach().numpy(),
-                     label=f"LB", color="blue")
+            plt.semilogy(norm_array.reshape([1, -1]).repeat([n_mc, 1]).numpy().flatten(), diag_gmlb_array.flatten(),
+                         "x",
+                         label=r"$GMLB$", color="green")
+            plt.semilogy(norm_array.detach().numpy(),
+                         (torch.diagonal(lb_array_z, dim1=1, dim2=2).sum(dim=-1) / d_p).detach().numpy(),
+                         label=f"LB", color="blue")
 
-    plt.legend()
-    plt.grid()
-    plt.xlabel(r"$\alpha$")
-    plt.ylabel(r"$\frac{\mathrm{Tr}(LB)}{d_p}$")
-    plt.tight_layout()
-    plt.savefig("compare.svg")
-    plt.show()
+        plt.legend()
+        plt.grid()
+        plt.xlabel(r"$\alpha$")
+        plt.ylabel(r"$\frac{\mathrm{Tr}(LB)}{d_p}$")
+        plt.tight_layout()
+        plt.savefig("compare.svg")
+        plt.show()
     results_p_size = {}
     n_test = 100
     for p in DATASET_SIZE2RUNNAME.keys():
-        # if p == 4:
-        #     continue
+        if p == 4:
+            continue
         mean_re_list = []
         gmean_re_list = []
         std_re_list = []
@@ -136,7 +139,6 @@ if __name__ == '__main__':
                                        dim=(2, 3)) / torch.unsqueeze(torch.norm(lb_array_z, dim=(1, 2)), dim=0), dim=1)
             gre = torch.mean(torch.norm(torch.stack(gmcrb_mc_list) - torch.unsqueeze(lb_array_z, dim=0),
                                         dim=(2, 3)) / torch.unsqueeze(torch.norm(lb_array_z, dim=(1, 2)), dim=0), dim=1)
-            # gre = torch.norm(gmcrb_est_array - lb_array_z, dim=(1, 2)) / torch.norm(lb_array_z, dim=(1, 2))
             mean_re_list.append(torch.mean(re).item())
             gmean_re_list.append(torch.mean(gre).item())
             std_re_list.append(torch.std(re).item())
