@@ -7,6 +7,7 @@ from experiments import flow_models
 from tqdm import tqdm
 import wandb
 import gmlb
+import numpy as np
 
 
 def config() -> pru.ConfigReader:
@@ -137,6 +138,9 @@ def run_main(in_run_parameters):
                                          inject_scale=in_run_parameters.inject_scale,
                                          affine_inject=in_run_parameters.affine_inject,
                                          inject_bias=in_run_parameters.inject_bias)
+
+    n_params = int(np.sum([np.prod(p.shape) for p in cnf.parameters()]))
+    pru.logger.info(f"CNF Number of parameter:{n_params}")
     m_step = len(train_loader)
     opt = torch.optim.Adam(cnf.parameters(), lr=in_run_parameters.lr, weight_decay=in_run_parameters.weight_decay)
     ma = pru.MetricAveraging()
