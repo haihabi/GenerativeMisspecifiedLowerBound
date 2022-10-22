@@ -1,4 +1,4 @@
-import pyresearchutils  as pru
+import pyresearchutils as pru
 from experiments import measurements_distributions
 import os
 import torch
@@ -89,7 +89,8 @@ def validation_run(in_ma, in_validation_loader, in_cnf):
 
 
 def override_linear_parameters(in_datamodel, model_folder):
-    file_list = os.listdir(os.path.join(model_folder, "models"))
+    folder_path = os.path.join(model_folder, "models")
+    file_list = os.listdir(folder_path) if os.path.exists(folder_path) else []
     model_file = f"LinearModel_{in_datamodel.d_x}_{in_datamodel.d_p}_model.pt"
     if isinstance(in_datamodel, measurements_distributions.TruncatedLinearModel):
         if model_file in file_list:
