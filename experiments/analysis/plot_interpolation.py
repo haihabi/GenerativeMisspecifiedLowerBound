@@ -8,7 +8,7 @@ import torch
 mc_n = 100
 norm_array = torch.linspace(0.1, 9, 20)
 
-with open('../data/data_interpolation_reg.pickle', 'rb') as handle:
+with open('../data/data_interpolation_reg_update_seed_2_trimming.pickle', 'rb') as handle:
     results_dict = pickle.load(handle)
 
 for max_limit, r in results_dict.items():
@@ -39,7 +39,7 @@ for max_limit, r in results_dict.items():
                    r[2],
                    label=f"LB b=-a={max_limit}")
 axins.set_xlim(1.8, 2.6)
-axins.set_ylim(7, 13)
+axins.set_ylim(5.5, 10)
 axins.set_xticklabels([])
 axins.set_yticklabels([])
 ax.indicate_inset_zoom(axins, edgecolor="black")

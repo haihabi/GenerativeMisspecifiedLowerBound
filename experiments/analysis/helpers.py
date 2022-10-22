@@ -30,7 +30,8 @@ def compute_mean_covarinace_truncated_norm(in_model, in_mu_overline):
 
 
 def parameter_sweep(in_flow, in_p_true, in_n_test_points, in_linear_ms, in_samples_per_point, in_model,
-                    norm_min=0.1, norm_max=10, non_linear=False, run_optimal=False, run_model=True, run_lb=True):
+                    norm_min=0.1, norm_max=10, non_linear=False, run_optimal=False, run_model=True, run_lb=True,
+                    min_limit=None, max_limit=None):
     norm_array = torch.linspace(norm_min, norm_max, in_n_test_points)
     res_list = []
     res_opt_list = []
@@ -62,18 +63,22 @@ def parameter_sweep(in_flow, in_p_true, in_n_test_points, in_linear_ms, in_sampl
         if run_model:
             _, _gmlb_v, _ = gmlb.generative_misspecified_cramer_rao_bound_flow(in_flow,
                                                                                in_samples_per_point,
-                                                                               in_linear_ms, **_p_true)
+                                                                               in_linear_ms, **_p_true,
+                                                                               min_limit=min_limit, max_limit=max_limit)
             res_list.append(_gmlb_v)
         if run_optimal:
             if isinstance(in_model, measurements_distributions.TruncatedLinearModel):
                 _, _gmlb_v_optimal, _ = gmlb.generative_misspecified_cramer_rao_bound(in_model.generate_data,
                                                                                       in_samples_per_point,
                                                                                       in_linear_ms,
-                                                                                      **_p_true)
+                                                                                      **_p_true, min_limit=min_limit,
+                                                                                      max_limit=max_limit)
             else:
                 _, _gmlb_v_optimal, _ = gmlb.generative_misspecified_cramer_rao_bound_flow(in_model.get_optimal_model(),
                                                                                            in_samples_per_point,
-                                                                                           in_linear_ms, **_p_true)
+                                                                                           in_linear_ms, **_p_true,
+                                                                                           min_limit=min_limit,
+                                                                                           max_limit=max_limit)
             res_opt_list.append(_gmlb_v_optimal)
 
     if len(res_list) > 0: res_list = torch.stack(res_list)
@@ -86,8 +91,9 @@ def parameter_sweep(in_flow, in_p_true, in_n_test_points, in_linear_ms, in_sampl
 def create_model_delta(in_d_x, in_d_p, scale=0.1):
     _h_delta = torch.randn(in_d_x, in_d_p, device=pru.get_working_device()) * scale
     _l_delta = torch.randn(in_d_x, in_d_x, device=pru.get_working_device()) * scale
-    # c_vv_delta = torch.matmul(c_vv_delta, c_vv_delta.T)
-    # _l_delta = torch.linalg.cholesky(c_vv_delta)
+    # _l_delta = _l_delta / torch.linalg.norm(_l_delta, ord="fro")
+    # _h_delta = _h_delta / torch.linalg.norm(_h_delta, ord="fro")
+
     return _h_delta, _l_delta
 
 

@@ -21,30 +21,30 @@ from tqdm import tqdm
 #                  200000: "dazzling-energy-220"}}
 
 # With Regularization
-RUNS_DICT = {3: {200: "stellar-cosmos-290",
-                 2000: "likely-firebrand-289",
-                 20000: "visionary-cosmos-286",
-                 200000: "exalted-yogurt-288"},
-             5: {200: "divine-salad-291",
-                 2000: "wandering-darkness-292",
-                 20000: "proud-dragon-287",
-                 200000: "logical-wave-293"}}
+RUNS_DICT = {
+    # 3: {200: "stellar-cosmos-290",
+    #     2000: "likely-firebrand-289",
+    #     20000: "visionary-cosmos-286",
+    #     200000: "exalted-yogurt-288"},
+    5: {200: "divine-salad-291",
+        2000: "wandering-darkness-292",
+        20000: "proud-dragon-287",
+        200000: "logical-wave-293"}}
 
 if __name__ == '__main__':
-    pru.set_seed(0)
-    # run_name = "dazzling-energy-220"
-    alpha = 1.0
-    beta = 1.0
+    pru.set_seed(2)
+    alpha = 0.1
+    beta = 0.1
     generate_delta = True
-    run_interpolation_plot = True
+    trimming_enable = True
     norm_max = 9
-    m = 640000
+    m = 64000
     n_test = 100
     mc_n = 20
     results_dict = {}
     for a in RUNS_DICT.keys():
         results_size_dict = {}
-        for run_name in RUNS_DICT[a].values():
+        for j, run_name in enumerate(RUNS_DICT[a].values()):
             model, run_parameters, cnf = load_run_data(run_name, affine_inject_base=False)
             samples_per_point = int(run_parameters.dataset_size / n_test)
             if generate_delta:
@@ -54,7 +54,27 @@ if __name__ == '__main__':
                 l_x = torch.linalg.cholesky(c_xx_overline)
                 linear_ms = build_misspecifietion_type_one(h, l_x, h_delta, l_delta, alpha, beta)
                 p_true = model.parameters.random_sample_parameters()
-
+            # if trimming_enable:
+            min_limit = None if not trimming_enable else run_parameters.min_limit * torch.ones(run_parameters.d_x,
+                                                                                               device=pru.get_working_device())
+            max_limit = None if not trimming_enable else run_parameters.max_limit * torch.ones(run_parameters.d_x,
+                                                                                               device=pru.get_working_device())
+            if j == 0:
+                best_gmcrb_mc_list = []
+                for i in tqdm(range(mc_n)):
+                    _, mcrb_est_array, lb_array_z, _ = parameter_sweep(None, p_true, n_test, linear_ms,
+                                                                       m,
+                                                                       model, norm_max=norm_max, run_optimal=True,
+                                                                       run_model=False,
+                                                                       run_lb=i == 0,
+                                                                       non_linear=run_parameters.non_linear_function)
+                    if i == 0:
+                        lb_array = lb_array_z
+                    best_gmcrb_mc_list.append(mcrb_est_array)
+                best_gre = torch.mean(torch.norm(torch.stack(best_gmcrb_mc_list) - torch.unsqueeze(lb_array, dim=0),
+                                                 dim=(2, 3)) / torch.unsqueeze(torch.norm(lb_array, dim=(1, 2)), dim=0),
+                                      dim=1)
+                print("a")
             mcrb_mc_list = []
             gmcrb_mc_list = []
             for i in tqdm(range(mc_n)):
@@ -62,13 +82,14 @@ if __name__ == '__main__':
                                                                    samples_per_point,
                                                                    model, norm_max=norm_max, run_optimal=True,
                                                                    run_model=False,
-                                                                   run_lb=i == 0,
+                                                                   run_lb=i == 0 and j == 0,
                                                                    non_linear=run_parameters.non_linear_function)
                 gmcrb_est_array, _, _, _ = parameter_sweep(cnf, p_true, n_test, linear_ms, m, model,
                                                            norm_max=norm_max, run_optimal=False, run_model=True,
                                                            run_lb=False,
-                                                           non_linear=run_parameters.non_linear_function)
-                if i == 0:
+                                                           non_linear=run_parameters.non_linear_function,
+                                                           min_limit=min_limit, max_limit=max_limit)
+                if i == 0 and j == 0:
                     lb_array = lb_array_z
                 mcrb_mc_list.append(mcrb_est_array)
                 gmcrb_mc_list.append(gmcrb_est_array)
@@ -82,5 +103,5 @@ if __name__ == '__main__':
 
     import pickle
 
-    with open(f'../data/data_reg_{n_test}.pickle', 'wb') as handle:
+    with open(f'../data/data_reg_{n_test}_update_v2_seed_trimming.pickle', 'wb') as handle:
         pickle.dump(results_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)

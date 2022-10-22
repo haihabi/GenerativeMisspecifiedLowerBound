@@ -16,7 +16,7 @@
   "inject_bias": false,
   "model_name": "LinearGaussian",
   "d_x": 8,
-  "d_p": 2,
+  "d_p": 8,
   "norm_min": 0.1,
   "norm_max": 10.0,
   "base_dataset_folder": "./temp/datasets",
